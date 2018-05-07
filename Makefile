@@ -23,7 +23,8 @@ clean_data:
 
 run_benches:
 	stack build
-	$(EXEC) ohua-latency $(GRAPH_DATA_FILE) 10 64 +RTS -N7
+	$(EXEC) ohua-sbfm-latency $(GRAPH_DATA_FILE) 10 64 +RTS -N7
+	$(EXEC) ohua-fbm-latency $(GRAPH_DATA_FILE) 10 64 +RTS -N7
 	$(EXEC) LVar-latency $(GRAPH_DATA_FILE) 10 64 +RTS -N2
 
 make_plot:

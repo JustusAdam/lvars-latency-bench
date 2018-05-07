@@ -1,8 +1,14 @@
 flags: {}
 packages:
   - .
-  - ../statefulness
-  - location: ../ohua-core
+  - location:
+      commit: cd6a057aecd5a32ca92e4a370f18b92a4b42c003
+      git: git@bitbucket.com:nrink/statefulness
+      #../statefulness
+    extra-dep: true
+  - location:
+      git: git@github.com:ohua-dev/ohua-core
+      commit: 0865d3761a731bba8c838658b21519c358dca6a7
     extra-dep: true
 extra-deps:
   - lvish-1.1.4
