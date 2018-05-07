@@ -43,6 +43,7 @@ bf_generate k0 startNode g () =
 forceA :: (Applicative m, NFData a) => a -> m a
 forceA a = a `deepseq` pure a
 
+{-# INLINE withUnitState #-}
 withUnitState :: StateT () IO a -> StateT () IO a
 withUnitState = id
 
@@ -54,11 +55,7 @@ start_traverse k g startNode f = do
             nodeStream <- liftWithIndex 0 (bf_generate k startNode g) unit
             processedStream <-
                 smapGen
-                    (liftWithIndex 1 $ \i ->
-                         withUnitState $ do
-                             ts <- liftIO currentTimeMillis
-                             let !res = f i
-                             pure (res, ts))
+                    (liftWithIndex 1 $ withUnitState . withTimeStamp f)
                     nodeStream
             liftWithIndex
                 2

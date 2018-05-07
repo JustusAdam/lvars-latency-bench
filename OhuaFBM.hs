@@ -43,13 +43,17 @@ bf_generate k0 startNode g () =
 forceA :: (Applicative m, NFData a) => a -> m a
 forceA a = a `deepseq` pure a
 
+{-# INLINE withUnitState #-}
 withUnitState :: SFM () a -> SFM () a
 withUnitState = id
 
 start_traverse :: Starter
 start_traverse k g startNode f = do
     begin <- currentTimeMillis
-    (stamps, _) <- runOhuaM algo $ let unit = toS () in replicate 3 unit
+    (stamps, _) <-
+        runOhuaM algo $
+        let unit = toS ()
+         in replicate 3 unit
     pure $ begin : stamps
     --putStrLn $ "  * Set size: " ++ show (Set.size set)
     --putStrLn $ "  * Set sum: " ++ show (Set.foldr (\(x,_) y -> x+y) 0 set)
@@ -58,10 +62,7 @@ start_traverse k g startNode f = do
         nodeStream <- liftWithIndex 0 (bf_generate k startNode g) ()
         processedStream <-
             smapGen
-                (liftWithIndex 1 $ \i -> withUnitState $ do
-                     ts <- liftIO currentTimeMillis
-                     let !res = f i
-                     pure (res, ts))
+                (liftWithIndex 1 $ withUnitState . withTimeStamp f)
                 nodeStream
         liftWithIndex
             2

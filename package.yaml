@@ -1,0 +1,75 @@
+name: latency-bench
+version: '0.1.0.0'
+synopsis: Cabal file for building the bf-traverse-ohua benchmark executable. A part
+  of the benchmarking infrastructure for the fhpc13-lvars library.
+category: Concurrency
+author: Justus Adam
+maintainer: justus.adam@tu-dresden.de
+ghc-options:
+- -threaded
+- -rtsopts
+- -threaded
+- -rtsopts
+- -O2
+- -threaded
+- -rtsopts
+dependencies:
+- base
+- statefulness
+- ohua-core
+- vector
+- rdtsc
+- containers
+- transformers
+- deepseq
+- time
+- split
+- bytestring
+- mtl
+- aeson
+- base
+- statefulness
+- ohua-core
+- vector
+- rdtsc
+- containers
+- transformers
+- deepseq
+- time
+- split
+- bytestring
+- mtl
+- aeson
+- base
+- split
+- containers
+- bytestring
+- time
+- rdtsc
+- vector
+- deepseq
+- lvish
+- transformers
+- monad-par
+- monad-par-extras
+- parallel
+library:
+  exposed-modules:
+    - LatencyRunner
+  source-dirs: src
+executables:
+  ohua-fbm-latency:
+    main: OhuaFBM.hs
+    dependencies: latency-bench
+  ohua-sbfm-latency:
+    main: OhuaSBFM.hs
+    dependencies: latency-bench
+  LVar-latency:
+    main: LVars.hs
+    dependencies: latency-bench
+  strategies-latency:
+    main: Strategies.hs
+    dependencies: latency-bench
+  monad-par-latency:
+    main: MonadPar.hs
+    dependencies: latency-bench

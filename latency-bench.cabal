@@ -1,65 +1,172 @@
-name:                latency-bench
-version:             0.1.0.0
-synopsis:            Cabal file for building the bf-traverse-ohua benchmark executable. A part of the benchmarking infrastructure for the fhpc13-lvars library.
-author:              Justus Adam
-maintainer:          justus.adam@tu-dresden.de
-category:            Concurrency
-build-type:          Simple
-cabal-version:       >=1.8
+-- This file has been generated from package.yaml by hpack version 0.20.0.
+--
+-- see: https://github.com/sol/hpack
+--
+-- hash: 368ec71a4632ffcbaa4ced5e31f5ea68dda4dfd2c3194332095886974f70fb10
 
-executable ohua-sbfm-latency
-  main-is: OhuaSBFM.hs
-  other-modules: LatencyRunner
+name:           latency-bench
+version:        0.1.0.0
+synopsis:       Cabal file for building the bf-traverse-ohua benchmark executable. A part of the benchmarking infrastructure for the fhpc13-lvars library.
+category:       Concurrency
+author:         Justus Adam
+maintainer:     justus.adam@tu-dresden.de
+build-type:     Simple
+cabal-version:  >= 1.10
+
+library
+  hs-source-dirs:
+      src
+  ghc-options: -threaded -rtsopts -threaded -rtsopts -O2 -threaded -rtsopts
+  build-depends:
+      aeson
+    , base
+    , bytestring
+    , containers
+    , deepseq
+    , lvish
+    , monad-par
+    , monad-par-extras
+    , mtl
+    , ohua-core
+    , parallel
+    , rdtsc
+    , split
+    , statefulness
+    , time
+    , transformers
+    , vector
+  exposed-modules:
+      LatencyRunner
+  other-modules:
+      Paths_latency_bench
   default-language: Haskell2010
-  ghc-options: -threaded -rtsopts
-  build-depends: base
-               , statefulness
-               , ohua-core
-               , vector
-               , rdtsc
-               , containers
-               , transformers
-               , deepseq
-               , time
-               , split
-               , bytestring
-               , mtl
-               , aeson
+
+executable LVar-latency
+  main-is: LVars.hs
+  ghc-options: -threaded -rtsopts -threaded -rtsopts -O2 -threaded -rtsopts
+  build-depends:
+      aeson
+    , base
+    , bytestring
+    , containers
+    , deepseq
+    , latency-bench
+    , lvish
+    , monad-par
+    , monad-par-extras
+    , mtl
+    , ohua-core
+    , parallel
+    , rdtsc
+    , split
+    , statefulness
+    , time
+    , transformers
+    , vector
+  other-modules:
+      Paths_latency_bench
+  default-language: Haskell2010
+
+executable monad-par-latency
+  main-is: MonadPar.hs
+  ghc-options: -threaded -rtsopts -threaded -rtsopts -O2 -threaded -rtsopts
+  build-depends:
+      aeson
+    , base
+    , bytestring
+    , containers
+    , deepseq
+    , latency-bench
+    , lvish
+    , monad-par
+    , monad-par-extras
+    , mtl
+    , ohua-core
+    , parallel
+    , rdtsc
+    , split
+    , statefulness
+    , time
+    , transformers
+    , vector
+  other-modules:
+      Paths_latency_bench
+  default-language: Haskell2010
 
 executable ohua-fbm-latency
   main-is: OhuaFBM.hs
-  other-modules: LatencyRunner
+  ghc-options: -threaded -rtsopts -threaded -rtsopts -O2 -threaded -rtsopts
+  build-depends:
+      aeson
+    , base
+    , bytestring
+    , containers
+    , deepseq
+    , latency-bench
+    , lvish
+    , monad-par
+    , monad-par-extras
+    , mtl
+    , ohua-core
+    , parallel
+    , rdtsc
+    , split
+    , statefulness
+    , time
+    , transformers
+    , vector
+  other-modules:
+      Paths_latency_bench
   default-language: Haskell2010
-  ghc-options: -threaded -rtsopts
-  build-depends: base
-               , statefulness
-               , ohua-core
-               , vector
-               , rdtsc
-               , containers
-               , transformers
-               , deepseq
-               , time
-               , split
-               , bytestring
-               , mtl
-               , aeson
 
-               
-executable LVar-latency
-  main-is:          LVars.hs
-  other-modules: LatencyRunner
+executable ohua-sbfm-latency
+  main-is: OhuaSBFM.hs
+  ghc-options: -threaded -rtsopts -threaded -rtsopts -O2 -threaded -rtsopts
+  build-depends:
+      aeson
+    , base
+    , bytestring
+    , containers
+    , deepseq
+    , latency-bench
+    , lvish
+    , monad-par
+    , monad-par-extras
+    , mtl
+    , ohua-core
+    , parallel
+    , rdtsc
+    , split
+    , statefulness
+    , time
+    , transformers
+    , vector
+  other-modules:
+      Paths_latency_bench
   default-language: Haskell2010
-  ghc-options:		-O2 -threaded -rtsopts
-  build-depends:    base
-                  , split
-                  , containers
-                  , bytestring
-                  , time
-                  , rdtsc
-                  , vector
-                  , deepseq
-                  , lvish
-                  , transformers
-                  , monad-par
-                  , monad-par-extras
+
+executable strategies-latency
+  main-is: Strategies.hs
+  ghc-options: -threaded -rtsopts -threaded -rtsopts -O2 -threaded -rtsopts
+  build-depends:
+      aeson
+    , base
+    , bytestring
+    , containers
+    , deepseq
+    , latency-bench
+    , lvish
+    , monad-par
+    , monad-par-extras
+    , mtl
+    , ohua-core
+    , parallel
+    , rdtsc
+    , split
+    , statefulness
+    , time
+    , transformers
+    , vector
+  other-modules:
+      Paths_latency_bench
+  default-language: Haskell2010

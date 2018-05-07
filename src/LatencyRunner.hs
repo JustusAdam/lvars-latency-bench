@@ -31,6 +31,8 @@ import           System.CPUTime  (getCPUTime)
 import Data.Time.Format
 import Data.Time.Clock.POSIX
 import Data.Time
+import Control.DeepSeq
+import Control.Monad.IO.Class
 
 -- For representing graphs
 import qualified Data.Vector as V
@@ -242,13 +244,13 @@ measureFreq = do
   start <- getCPUTime
   let loop :: Word64 -> Word64 -> IO (Word64,Word64)
       loop !n !last = 
-       do t2 <- rdtsc 
-	  when (t2 < last) $
-	       putStrLn$ "COUNTERS WRAPPED "++ show (last,t2) 
-	  cput <- getCPUTime		
-	  if (cput - start < measure)
-	   then loop (n+1) t2
-	   else return (n,t2)
+        do t2 <- rdtsc 
+           when (t2 < last) $
+             putStrLn$ "COUNTERS WRAPPED "++ show (last,t2) 
+           cput <- getCPUTime    
+           if (cput - start < measure)
+             then loop (n+1) t2
+             else return (n,t2)
   (n,t2) <- loop 0 t1
   putStrLn$ "  Approx getCPUTime calls per second: "++ commaint (scale * fromIntegral n)
   when (t2 < t1) $ 
@@ -278,3 +280,12 @@ commaint n =
    intersperse "," $ 
    chunksOf 3 $ 
    reverse (show n)
+
+
+{-# INLINE withTimeStamp #-}
+withTimeStamp :: (NFData b, MonadIO m) => (a -> b) -> a -> m (b, Integer)
+withTimeStamp f =
+    \i -> do
+        ts <- liftIO currentTimeMillis
+        let res = f i
+        res `deepseq` pure (res, ts)
