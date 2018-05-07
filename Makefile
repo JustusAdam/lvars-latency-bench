@@ -1,16 +1,16 @@
 #VERTICES   =  40000
 #EDGES      = 320000
 
-VERTICES    = 120000
-EDGES       = 1000000
+VERTICES    := 120000
+EDGES       := 1000000
 
-RAND_DATA  = /tmp/rand
+RAND_DATA  := /tmp/rand
 
-PBBSDIR    = ../pbbs/testData/graphData
+PBBSDIR    := ../pbbs/testData/graphData
 
-EXEC = stack exec --
+EXEC := stack exec --
 
-GRAPH_DATA_FILE = $(RAND_DATA)_$(EDGES)_$(VERTICES)
+GRAPH_DATA_FILE := $(RAND_DATA)_$(EDGES)_$(VERTICES)
 
 default: rand_data run_benches
 

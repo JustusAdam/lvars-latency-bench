@@ -9,6 +9,7 @@ import qualified Data.IntSet as IS
 import qualified Data.Set as Set 
 import Control.DeepSeq
 import Monad.StreamsBasedFreeMonad
+import Monad.StreamsBasedExplicitAPI
 import Control.Monad.Trans.Class
 import Control.Monad.State
 import qualified Data.Vector as V
@@ -16,12 +17,11 @@ import Data.Time
 import Data.Aeson
 import qualified Data.ByteString.Lazy as BS
 import System.CPUTime
+import Data.Dynamic2
 
 
-bf_generate :: Int -> Int -> Graph2 -> Sf (SfMonad s (Generator IO Int))
-bf_generate k0 startNode g =
-    liftSf $
-    sfm $
+bf_generate :: Int -> Int -> Graph2 -> () -> StateT () IO (Generator IO Int)
+bf_generate k0 startNode g () =
     pure $
     let gen seen_rank k new_rank
             | k == 0 = finish
@@ -43,28 +43,32 @@ bf_generate k0 startNode g =
 forceA :: (Applicative m, NFData a) => a -> m a
 forceA a = a `deepseq` pure a
 
+withUnitState :: StateT () IO a -> StateT () IO a
+withUnitState = id
+
 start_traverse :: Starter
 start_traverse k g startNode f = do
     algo <-
         createAlgo $ do
-            nodeStream <- call (bf_generate k startNode g) united
+            unit <- sfConst' ()
+            nodeStream <- liftWithIndex 0 (bf_generate k startNode g) unit
             processedStream <-
                 smapGen
-                    (call
-                         (liftSf $ \ i -> sfm $ do
+                    (liftWithIndex 1 $ \i ->
+                         withUnitState $ do
                              ts <- liftIO currentTimeMillis
                              let !res = f i
-                             pure (res, ts)
-                         )
-                         united)
+                             pure (res, ts))
                     nodeStream
-            call
-                (liftSf $ \gen -> sfm $
-                     forceA . map snd =<< liftIO (G.toList gen))
-                united
+            liftWithIndex
+                2
+                (forceA . map snd <=< withUnitState . liftIO . G.toList)
                 processedStream
     begin <- currentTimeMillis
-    stamps <- runAlgo algo ()
+    stamps <-
+        runAlgo algo $
+        let unit = toDyn ()
+         in replicate 3 unit
     pure $ begin : stamps
     --putStrLn $ "  * Set size: " ++ show (Set.size set)
     --putStrLn $ "  * Set sum: " ++ show (Set.foldr (\(x,_) y -> x+y) 0 set)
