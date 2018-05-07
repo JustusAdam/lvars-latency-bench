@@ -62,6 +62,7 @@ start_traverse :: Int       -- iteration counter
                   -> WorkFn -- function to be applied to each node
                   -> IO [Integer]
 start_traverse k !g startNode f = do
+  begin <- currentTimeMillis
   runParIO $ do        
         prnt $ " * Running on " ++ show numCapabilities ++ " parallel resources..."
         
@@ -109,7 +110,7 @@ start_traverse k !g startNode f = do
         prnt $ " * Finished consumeSet:"
         prnt $ "  * Set size: " ++ show (Set.size s)
         prnt $ "  * Set sum: " ++ show (Set.fold (\(x,_) y -> x+y) 0 s)
-        pure ts
+        pure $ begin : ts
 
 
 main = makeMain start_traverse "LVars"

@@ -63,11 +63,9 @@ start_traverse k g startNode f = do
                      forceA . map snd =<< liftIO (G.toList gen))
                 united
                 processedStream
-    begin <- getCurrentTime
+    begin <- currentTimeMillis
     stamps <- runAlgo algo ()
-    end <- getCurrentTime
-    putStrLn "done with processing"
-    pure stamps
+    pure $ begin : stamps
     --putStrLn $ "  * Set size: " ++ show (Set.size set)
     --putStrLn $ "  * Set sum: " ++ show (Set.foldr (\(x,_) y -> x+y) 0 set)
 
@@ -75,4 +73,4 @@ start_traverse k g startNode f = do
 
 
 main = do
-  makeMain start_traverse "ohua"
+  makeMain start_traverse "sfbm"

@@ -48,11 +48,9 @@ withUnitState = id
 
 start_traverse :: Starter
 start_traverse k g startNode f = do
-    begin <- getCurrentTime
+    begin <- currentTimeMillis
     (stamps, _) <- runOhuaM algo $ let unit = toS () in replicate 3 unit
-    end <- getCurrentTime
-    putStrLn "done with processing"
-    pure stamps
+    pure $ begin : stamps
     --putStrLn $ "  * Set size: " ++ show (Set.size set)
     --putStrLn $ "  * Set sum: " ++ show (Set.foldr (\(x,_) y -> x+y) 0 set)
   where
@@ -71,4 +69,4 @@ start_traverse k g startNode f = do
             processedStream
 
 main = do
-  makeMain start_traverse "ohua"
+  makeMain start_traverse "fbm"

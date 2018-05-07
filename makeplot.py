@@ -33,7 +33,7 @@ def get_data(arguments):
     else:
         import zipfile
         with zipfile.ZipFile(arguments.use_zipped_data or 'results.zip', mode='r') as zf:
-            return { ty.rstrip(".json") : process_open_data_file(zf.open(ty,mode=r)) for ty in zf.namelist() }
+            return { ty.rstrip(".json") : process_open_data_file(zf.open(ty,mode='r')) for ty in zf.namelist() }
 
 
 def get_latest_files():
