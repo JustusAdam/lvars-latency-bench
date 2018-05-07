@@ -63,6 +63,7 @@ start_traverse :: Int       -- iteration counter
                   -> IO [Integer]
 start_traverse k !g startNode f = do
   begin <- currentTimeMillis
+  lock <- newLock
   runParIO $ do        
         prnt $ " * Running on " ++ show numCapabilities ++ " parallel resources..."
         
@@ -78,13 +79,13 @@ start_traverse k !g startNode f = do
         -- pass in { startNode } as the initial "new" set
         --set <- bf_traverse k g l_acc IS.empty (IS.singleton startNode)
         
-        forEachHP (Just pool) l_acc (\i -> do
-                          liftIO $ takeMVar lock
+        forEachHP (Just pool) l_acc (\i -> withLock lock $ do 
+                          
                           arrivalStamp <- liftIO currentTimeMillis
-                          let !res = f i
+                          (res, ts) <- withTimeStamp f i
                           insert res l_res
                           insert (i, arrivalStamp) tsTracker
-                          liftIO $ putMVar lock ()
+                          
                       )
         set <- bf_traverse k g l_acc IS.empty (IS.singleton startNode)
         

@@ -62,17 +62,13 @@ def plot_data(arguments):
     save_location = arguments.output
     max_len = max(map(lambda d0 : max(d0) - min(d0), d.values()))
     samplewidth = max_len / 200
-
-    print samplewidth
     
     for ty, data in d.items():
         max_point = max(data)
         min_point = min(data)
         def bucket_num(i):
             return (i - min_point) / samplewidth
-        print ty, len(data)
         frequencies = { b_num : len(list(items)) for (b_num, items) in itertools.groupby(sorted(data, key=bucket_num), bucket_num) }
-        print max(frequencies.values())
         x = numpy.array(range(bucket_num(max_point)))
         y = numpy.array(map(lambda i : frequencies.get(i, 0), x))
         

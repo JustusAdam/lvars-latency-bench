@@ -33,6 +33,8 @@ import Data.Time.Clock.POSIX
 import Data.Time
 import Control.DeepSeq
 import Control.Monad.IO.Class
+import Control.Concurrent.MVar
+import Control.Exception
 
 -- For representing graphs
 import qualified Data.Vector as V
@@ -289,3 +291,18 @@ withTimeStamp f =
         ts <- liftIO currentTimeMillis
         let res = f i
         res `deepseq` pure (res, ts)
+
+
+type Lock = MVar ()
+
+{-# INLINE newLock #-}
+newLock :: MonadIO m => m Lock
+newLock = liftIO $ newMVar ()
+
+{-# INLINE withLock #-}
+withLock :: MonadIO m => Lock -> m a -> m a
+withLock l ac = do
+  () <- liftIO $ takeMVar l
+  res <- ac
+  liftIO $ putMVar l ()
+  pure res

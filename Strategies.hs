@@ -46,12 +46,13 @@ bf_pure k !g  !seen_rank !new_rank !f = do
 start_traverse :: Starter
 start_traverse k !g startNode f = do
     ncap <- getNumCapabilities
+    lock <- newLock
     putStrLn $ " * Running on " ++ show ncap ++ " parallel resources..."
     let set = bf_pure k g IS.empty (IS.singleton startNode) f
         l =
             Strat.withStrategy
                 (Strat.parBuffer 16 Strat.rdeepseq)
-                (map (unsafePerformIO . withTimeStamp f) (IS.toList set))
+                (map (unsafePerformIO . withLock lock . withTimeStamp f) (IS.toList set))
         set2 = Set.fromList $ map fst l
         size = Set.size set2
     t0 <- getCurrentTime
