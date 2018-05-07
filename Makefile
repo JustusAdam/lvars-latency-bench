@@ -12,7 +12,7 @@ EXEC = stack exec --
 
 GRAPH_DATA_FILE = $(RAND_DATA)_$(EDGES)_$(VERTICES)
 
-default: rand_data run_benches make_plot
+default: rand_data run_benches
 
 rand_data:
 	(cd $(PBBSDIR); make randLocalGraph)
@@ -28,4 +28,4 @@ run_benches:
 	$(EXEC) LVar-latency $(GRAPH_DATA_FILE) 10 64 +RTS -N2
 
 make_plot:
-	python makeplot.py fig.png
+	python makeplot.py plot -o fig.png

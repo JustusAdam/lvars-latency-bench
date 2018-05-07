@@ -87,7 +87,7 @@ def plot_data(arguments):
 def main():
     import argparse
     parser = argparse.ArgumentParser()
-    parser.add_argument('--output', '-o', help="Where to write the graph or the zip file to", default=None)
+    parser.add_argument('-o', '--output', help="Where to write the graph or the zip file to", default=None)
 
     sp = parser.add_subparsers()
 
