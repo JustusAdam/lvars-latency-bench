@@ -18,14 +18,15 @@ import Data.Aeson
 import qualified Data.ByteString.Lazy as BS
 import System.CPUTime
 import Data.Dynamic2
+import Text.Printf
 
 
 bf_generate :: Int -> Int -> Graph2 -> () -> StateT () IO (Generator IO Int)
 bf_generate k0 startNode g () =
     pure $
-    let gen seen_rank k new_rank
-            | k == 0 = finish
-            | IS.null new_rank = finish
+    let gen !seen_rank !k !new_rank !new_rank_max
+            | k == 0 = finishTraverse
+            | IS.null new_rank = finishTraverse
             | otherwise = do
                 let seen_rank' = IS.union seen_rank new_rank
                     allNbr' =
@@ -34,9 +35,15 @@ bf_generate k0 startNode g () =
                             IS.empty
                             new_rank
                     new_rank' = IS.difference allNbr' seen_rank'
+                    nr_max = max new_rank_max $ IS.size new_rank'
                 (foldableGenerator (IS.toList new_rank') `mappend`
-                 gen seen_rank' (pred k) new_rank')
-     in gen mempty k0 [startNode]
+                 gen seen_rank' (pred k) new_rank' nr_max)
+          where
+            finishTraverse = do
+              liftIO $ printf "Largest seen rank %i, largest new rank: %i" (IS.size seen_rank) new_rank_max
+              finish
+          
+     in gen mempty k0 [startNode] 0
 
 
 

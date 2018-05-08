@@ -9,6 +9,10 @@ from scipy.stats.kde import gaussian_kde
 
 FNAME_PATTERN = re.compile("results-(\w+)-(\d+)")
 
+SLICE_SIZE = 100
+
+BUCKETS = 1000
+
 #plt.style.use("ggplot")
 
 def dmap(f, d):
@@ -61,7 +65,12 @@ def plot_data(arguments):
     d = get_data(arguments)
     save_location = arguments.output
     max_len = max(map(lambda d0 : max(d0) - min(d0), d.values()))
-    samplewidth = max_len / 200
+    samplewidth = max_len / BUCKETS
+
+    print samplewidth
+
+    fig = plt.figure()
+    ax = fig.add_subplot(1,1,1)
     
     for ty, data in d.items():
         max_point = max(data)
@@ -73,8 +82,9 @@ def plot_data(arguments):
         y = numpy.array(map(lambda i : frequencies.get(i, 0), x))
         
         #print (len(x),len(y))
-        plt.plot(x, y, label=ty)
-    plt.legend()
+        ax.plot(x[:SLICE_SIZE], y[:SLICE_SIZE], label=ty, linestyle='None', marker='.')
+    #ax.set_xscale('log')
+    ax.legend()
     if save_location is None:
         plt.show()
     else:

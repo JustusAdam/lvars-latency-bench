@@ -23,7 +23,7 @@ import Data.StateElement
 bf_generate :: Int -> Int -> Graph2 -> SF () () (Generator IO Int)
 bf_generate k0 startNode g () =
     pure $
-    let gen seen_rank k new_rank
+    let gen !seen_rank !k !new_rank
             | k == 0 = finish
             | IS.null new_rank = finish
             | otherwise = do
