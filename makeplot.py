@@ -11,7 +11,7 @@ FNAME_PATTERN = re.compile("results-(\w+)-(\d+)")
 
 SLICE_SIZE = 100
 
-BUCKETS = 1000
+BUCKETS = 200
 
 #plt.style.use("ggplot")
 
@@ -82,7 +82,8 @@ def plot_data(arguments):
         y = numpy.array(map(lambda i : frequencies.get(i, 0), x))
         
         #print (len(x),len(y))
-        ax.plot(x[:SLICE_SIZE], y[:SLICE_SIZE], label=ty, linestyle='None', marker='.')
+#        ax.plot(x, y, label=ty, linestyle='None', marker='.')
+        ax.plot(x, y, label=ty)
     #ax.set_xscale('log')
     ax.legend()
     if save_location is None:

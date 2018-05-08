@@ -10,12 +10,16 @@ PBBSDIR    := ../pbbs/testData/graphData
 
 EXEC := stack exec --
 
-GRAPH_DATA_FILE := $(RAND_DATA)_$(EDGES)_$(VERTICES)
+DYNAMIC_GRAPH_DATA_FILE := $(RAND_DATA)_$(EDGES)_$(VERTICES)
+
+STATIC_GRAPH_DATA_FILE := radon-graph
+
+GRAPH_DATA_FILE := $(STATIC_GRAPH_DATA_FILE)
 
 HIGH_CORES := 7
-LOW_CORES := 2
+LOW_CORES := 7
 
-default: rand_data run_benches
+default: run_benches
 
 rand_data:
 	(cd $(PBBSDIR); make randLocalGraph)
