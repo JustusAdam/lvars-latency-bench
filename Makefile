@@ -19,6 +19,10 @@ GRAPH_DATA_FILE := $(STATIC_GRAPH_DATA_FILE)
 HIGH_CORES := 7
 LOW_CORES := 7
 
+DEPTH := 10
+
+WORK := 64
+
 default: run_benches
 
 rand_data:
@@ -30,11 +34,11 @@ clean_data:
 
 run_benches:
 	stack build
-	$(EXEC) ohua-sbfm-latency $(GRAPH_DATA_FILE) 10 64 +RTS -N$(HIGH_CORES)
-	$(EXEC) ohua-fbm-latency $(GRAPH_DATA_FILE) 10 64 +RTS -N$(HIGH_CORES)
-	$(EXEC) monad-par-latency $(GRAPH_DATA_FILE) 10 64 +RTS -N$(HIGH_CORES)
-	$(EXEC) strategies-latency $(GRAPH_DATA_FILE) 10 64 +RTS -N$(HIGH_CORES)
-	$(EXEC) LVar-latency $(GRAPH_DATA_FILE) 10 64 +RTS -N$(HIGH_CORES)
+	$(EXEC) ohua-sbfm-latency $(GRAPH_DATA_FILE) $(DEPTH) $(WORK) +RTS -N$(HIGH_CORES)
+	$(EXEC) ohua-fbm-latency $(GRAPH_DATA_FILE) $(DEPTH) $(WORK) +RTS -N$(HIGH_CORES)
+	$(EXEC) monad-par-latency $(GRAPH_DATA_FILE) $(DEPTH) $(WORK) +RTS -N$(HIGH_CORES)
+	$(EXEC) strategies-latency $(GRAPH_DATA_FILE) $(DEPTH) $(WORK) +RTS -N$(HIGH_CORES)
+	$(EXEC) LVar-latency $(GRAPH_DATA_FILE) $(DEPTH) $(WORK) +RTS -N$(HIGH_CORES)
 
 make_plot:
 	python makeplot.py plot -o fig.png
