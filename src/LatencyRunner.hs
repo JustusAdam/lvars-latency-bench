@@ -35,6 +35,7 @@ import Control.DeepSeq
 import Control.Monad.IO.Class
 import Control.Concurrent.MVar
 import Control.Exception
+import Data.Aeson as JSON
 
 -- For representing graphs
 import qualified Data.Vector as V
@@ -209,7 +210,18 @@ makeMain start_traverse ty = do
   let nanos = ((1000 * 1000 * 1000 * (fromIntegral first')) `quot` (fromIntegral freq :: Integer))
   putStrLn $ " In nanoseconds: "++commaint nanos
   putStrLn $ "FIRSTHIT " ++ show nanos
-  writeFile ("results-" ++ ty ++ "-" ++ tToStr t1) $ show $ ctime :res
+  writeFile ("results-" ++ ty ++ "-" ++ tToStr t1) $
+    object [ "data" .=
+             object
+               [ "start" .= t0
+               , "arrivals" .= res
+               ]
+           , "parameters" .=
+             object [ "work" .= wrk
+                    , "depth" .= depthK
+                    , "system" .= ty
+                    ]
+           ]
   where
     tToStr = formatTime defaultTimeLocale "%s"
 

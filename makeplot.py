@@ -1,11 +1,8 @@
 import glob
 import re
 import json
-import numpy
-import matplotlib.pyplot as plt
 import itertools
 import sys
-from scipy.stats.kde import gaussian_kde
 import math
 
 FNAME_PATTERN = re.compile("results-(\w+)-(\d+)")
@@ -14,6 +11,7 @@ FNAME_PATTERN = re.compile("results-(\w+)-(\d+)")
 
 fst = lambda a : a[0]
 snd = lambda a : a[1]
+const = lambda a b : a
 
 def dmap(f, d):
     return { k : f(v) for k, v in d.items() }
@@ -23,7 +21,7 @@ def load_file(fname):
         return process_open_data_file(f)
 
 def process_open_data_file(f):
-        return list(map(int,json.load(f)))
+    return json.load(f)
 
 def interpret_file_name(fname):
 
@@ -47,6 +45,7 @@ def get_data(arguments):
                     tyNum = 0
                 elif len(sty) == 2:
                     ty1, tyNum = sty
+                    tyNum = int(tyNum)
                 else:
                     raise Exception("invalid split: " + sty)
 
@@ -73,14 +72,20 @@ def zip_latest_files(arguments):
     import zipfile
 
     fname = arguments.output or 'results.zip'
+
+    restrictions = arguments.restrict
+
+    filterf = (lambda a : a in frozenset(restrictions)) if len(restrictions) != 0 else const True
     
     with zipfile.ZipFile(fname, mode='w') as z:
-        for ty, data_files in get_latest_n_files(arguments.num).items():
-            for i, f in zip(itertools.count(), data_files):
+        for ty, data_files in get_latest_n_files(arguments.num).items() if filterf(ty):
+            for i, data_file in zip(itertools.count(), data_files):
                 z.write(data_file, ty + ('-' + n if n < 0 else '') + '.json')
             
 
 def plot_data(arguments):
+    import numpy
+    import matplotlib.pyplot as plt
     d = get_data(arguments)
     save_location = arguments.output
     #max_len = max(map(lambda d0 : max(d0) - min(d0), d.values()))
@@ -103,14 +108,14 @@ def plot_data(arguments):
     gridx = int(math.ceil(math.sqrt(experiments)))
     gridy= gridx
 
-    print experiments
-    print gridx
-
     for i in range(experiments):
-        ax = fig.add_subplot(i + 1,gridx,gridy)
-        for ty, data in d[i].items():
+        
+        ax = fig.add_subplot(gridx,gridy, i)
+
+        for ty, full_data in d[i].items():
+            data = full_data["timestamps"]
             max_point = max(data)
-            min_point = min(data)
+            min_point = full_data["start"]
             def bucket_num(i):
                 return (i - min_point) / samplewidth
             frequencies = { b_num : len(list(items))
@@ -149,6 +154,7 @@ def main():
     plot_parser.set_defaults(func=plot_data)
     z_parser = sp.add_parser('zip')
     z_parser.add_argument('-n', '--num', type=int, default=1)
+    z_parser.add_argument('-r', '--restrict', nargs='*')
     z_parser.set_defaults(func=zip_latest_files)
 
     res = parser.parse_args()
