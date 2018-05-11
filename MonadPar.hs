@@ -30,13 +30,14 @@ bf_traverse :: Int             -- iteration counter
                -> Graph2       -- graph
                -> IS.IntSet    -- set of "seen" node labels, initially size 0
                -> IS.IntSet    -- set of "new" node labels, initially size 1
+               -> WorkFn
                -> Par (IS.IntSet)
-bf_traverse 0 _ seen_rank new_rank = do
+bf_traverse 0 _ seen_rank new_rank _ = do
   when verbose $ prnt $ "bf_traverse finished! seen/new size: "
     ++ show (IS.size seen_rank, IS.size new_rank)
   return (IS.union seen_rank new_rank)
 
-bf_traverse k !g !seen_rank !new_rank = do 
+bf_traverse k !g !seen_rank !new_rank f = do 
   when verbose $ prnt  $"bf_traverse call... "
     ++ show k ++ " seen/new size "
     ++ show (IS.size seen_rank, IS.size new_rank)
@@ -48,8 +49,8 @@ bf_traverse k !g !seen_rank !new_rank = do
     let seen_rank' = IS.union seen_rank new_rank
         allNbr'    = IS.fold (\i acc -> IS.union (g V.! i) acc) 
                         IS.empty new_rank
-        new_rank'  = IS.difference allNbr' seen_rank' 
-    bf_traverse (k-1) g  seen_rank' new_rank'
+        new_rank'  = IS.fromList $ map (snd . f) $ IS.toList $ IS.difference allNbr' seen_rank'
+    bf_traverse (k-1) g  seen_rank' new_rank' f
 
 start_traverse :: Starter
 start_traverse k !g startNode f = do
@@ -59,7 +60,7 @@ start_traverse k !g startNode f = do
         prnt $
             " * Running on " ++ show numCapabilities ++ " parallel resources..."
         -- pass in { startNode } as the initial "new" set
-        set <- bf_traverse k g IS.empty (IS.singleton startNode)
+        set <- bf_traverse k g IS.empty (IS.singleton startNode) f
         prnt $ " * Done with bf_traverse..."
         resLs <- parMap (unsafePerformIO . withLock lock . withTimeStamp f) (IS.toList set)
         let set2 = Set.fromList $ map fst resLs

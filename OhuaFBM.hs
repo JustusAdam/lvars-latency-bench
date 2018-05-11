@@ -20,8 +20,8 @@ import System.CPUTime
 import Data.StateElement
 
 
-bf_generate :: Int -> Int -> Graph2 -> SF () () (Generator IO Int)
-bf_generate k0 startNode g () =
+bf_generate :: Int -> Int -> Graph2 -> WorkFn -> SF () () (Generator IO Int)
+bf_generate k0 startNode g f () =
     pure $
     let gen !seen_rank !k !new_rank
             | k == 0 = finish
@@ -34,7 +34,10 @@ bf_generate k0 startNode g () =
                             IS.empty
                             new_rank
                     new_rank' = IS.difference allNbr' seen_rank'
-                (foldableGenerator (IS.toList new_rank') `mappend`
+                    ls = IS.toList new_rank'
+                    res = map (snd . f) ls
+                forceA res
+                (foldableGenerator res `mappend`
                  gen seen_rank' (pred k) new_rank')
      in (gen mempty k0 [startNode] :: Generator IO Int)
 
@@ -59,7 +62,7 @@ start_traverse k g startNode f = do
     --putStrLn $ "  * Set sum: " ++ show (Set.foldr (\(x,_) y -> x+y) 0 set)
   where
     algo = do
-        nodeStream <- liftWithIndex 0 (bf_generate k startNode g) ()
+        nodeStream <- liftWithIndex 0 (bf_generate k startNode g f) ()
         processedStream <-
             smapGen
                 (liftWithIndex 1 $ withUnitState . withTimeStamp f)

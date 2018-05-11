@@ -21,10 +21,10 @@ import Data.Dynamic2
 import Text.Printf
 
 
-bf_generate :: Int -> Int -> Graph2 -> () -> StateT () IO (Generator IO Int)
-bf_generate k0 startNode g () =
+bf_generate :: Int -> Int -> Graph2 -> WorkFn -> () -> StateT () IO (Generator IO Int)
+bf_generate k0 startNode g f () =
     pure $
-    let gen !seen_rank !k !new_rank !new_rank_max
+    let gen !seen_rank !k !new_rank
             | k == 0 = finishTraverse
             | IS.null new_rank = finishTraverse
             | otherwise = do
@@ -35,15 +35,16 @@ bf_generate k0 startNode g () =
                             IS.empty
                             new_rank
                     new_rank' = IS.difference allNbr' seen_rank'
-                    nr_max = max new_rank_max $ IS.size new_rank'
-                (foldableGenerator (IS.toList new_rank') `mappend`
-                 gen seen_rank' (pred k) new_rank' nr_max)
+                    ls = IS.toList new_rank'
+                    res = map (snd . f) ls
+                forceA res
+                (foldableGenerator res `mappend`
+                 gen seen_rank' (pred k) new_rank')
           where
-            finishTraverse = do
-              liftIO $ printf "Largest seen rank %i, largest new rank: %i" (IS.size seen_rank) new_rank_max
+            finishTraverse =
               finish
           
-     in gen mempty k0 [startNode] 0
+     in gen mempty k0 [startNode]
 
 
 
@@ -59,7 +60,7 @@ start_traverse k g startNode f = do
     algo <-
         createAlgo $ do
             unit <- sfConst' ()
-            nodeStream <- liftWithIndex 0 (bf_generate k startNode g) unit
+            nodeStream <- liftWithIndex 0 (bf_generate k startNode g f) unit
             processedStream <-
                 smapGen
                     (liftWithIndex 1 $ withUnitState . withTimeStamp f)

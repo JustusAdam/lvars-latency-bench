@@ -33,13 +33,14 @@ bf_traverse :: Int             -- iteration counter
                -> ISet s Node -- LVar
                -> IS.IntSet    -- set of "seen" node labels, initially size 0
                -> IS.IntSet    -- set of "new" node labels, initially size 100
+               -> WorkFn
                -> Par d s (IS.IntSet)
-bf_traverse 0 _ _ seen_rank new_rank = do
+bf_traverse 0 _ _ seen_rank new_rank _ = do
   when verbose $ prnt $ "bf_traverse finished! seen/new size: "
     ++ show (IS.size seen_rank, IS.size new_rank)
   return (IS.union seen_rank new_rank)
 
-bf_traverse k !g !l_acc !seen_rank !new_rank = do 
+bf_traverse k !g !l_acc !seen_rank !new_rank f = do 
   when verbose $ prnt  $"bf_traverse call... "
     ++ show k ++ " seen/new size "
     ++ show (IS.size seen_rank, IS.size new_rank)
@@ -53,8 +54,8 @@ bf_traverse k !g !l_acc !seen_rank !new_rank = do
                         IS.empty new_rank
         new_rank'  = IS.difference allNbr' seen_rank'
 
-    fork $ mapM_ (`insert` l_acc) (IS.toList new_rank')
-    bf_traverse (k-1) g l_acc seen_rank' new_rank'
+    fork $ mapM_ (`insert` l_acc) (map (snd . f) $ IS.toList new_rank')
+    bf_traverse (k-1) g l_acc seen_rank' new_rank' f
 
 start_traverse :: Int       -- iteration counter
                   -> Graph2 -- graph
@@ -87,7 +88,7 @@ start_traverse k !g startNode f = do
                           insert (i, arrivalStamp) tsTracker
                           
                       )
-        set <- bf_traverse k g l_acc IS.empty (IS.singleton startNode)
+        set <- bf_traverse k g l_acc IS.empty (IS.singleton startNode) f
         
         prnt $ " * Done with bf_traverse..."
         let size = IS.size set
