@@ -214,7 +214,7 @@ makeMain start_traverse ty = do
   BL.writeFile ("results-" ++ ty ++ "-" ++ tToStr t1) $ encode $
     object [ "data" .=
              object
-               [ "start" .= t0
+               [ "start" .= ctime
                , "arrivals" .= res
                ]
            , "parameters" .=

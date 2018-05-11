@@ -4,6 +4,7 @@ import json
 import itertools
 import sys
 import math
+from subprocess import call
 
 FNAME_PATTERN = re.compile("results-(\w+)-(\d+)")
 
@@ -11,7 +12,7 @@ FNAME_PATTERN = re.compile("results-(\w+)-(\d+)")
 
 fst = lambda a : a[0]
 snd = lambda a : a[1]
-const = lambda a b : a
+const = lambda a, b : a
 
 def dmap(f, d):
     return { k : f(v) for k, v in d.items() }
@@ -75,12 +76,13 @@ def zip_latest_files(arguments):
 
     restrictions = arguments.restrict
 
-    filterf = (lambda a : a in frozenset(restrictions)) if len(restrictions) != 0 else const True
+    filterf = (lambda a : a in frozenset(restrictions)) if restrictions is not None else lambda a : True
     
     with zipfile.ZipFile(fname, mode='w') as z:
-        for ty, data_files in get_latest_n_files(arguments.num).items() if filterf(ty):
-            for i, data_file in zip(itertools.count(), data_files):
-                z.write(data_file, ty + ('-' + n if n > 0 else '') + '.json')
+        for ty, data_files in get_latest_n_files(arguments.num).items():
+            if filterf(ty):
+                for i, data_file in zip(itertools.count(), data_files):
+                    z.write(data_file, ty + ('-' + n if n > 0 else '') + '.json')
             
 
 def plot_data(arguments):
@@ -113,13 +115,14 @@ def plot_data(arguments):
         ax = fig.add_subplot(gridx,gridy, i)
 
         for ty, full_data in d[i].items():
-            data = full_data["timestamps"]
-            max_point = max(data)
-            min_point = full_data["start"]
+            data = full_data["data"]
+            arrivals = data["arrivals"]
+            max_point = max(arrivals)
+            min_point = data["start"]
             def bucket_num(i):
                 return (i - min_point) / samplewidth
             frequencies = { b_num : len(list(items))
-                            for (b_num, items) in itertools.groupby(sorted(data, key=bucket_num), bucket_num) }
+                            for (b_num, items) in itertools.groupby(sorted(arrivals, key=bucket_num), bucket_num) }
             x = numpy.array(range(bucket_num(max_point)))
             y = numpy.array(map(lambda i : frequencies.get(i, 0), x))
         
@@ -133,6 +136,9 @@ def plot_data(arguments):
     else:
         plt.savefig(save_location)
 
+
+
+        
 def main():
     import argparse
     parser = argparse.ArgumentParser()
