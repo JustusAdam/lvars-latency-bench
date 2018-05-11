@@ -36,6 +36,7 @@ import Control.Monad.IO.Class
 import Control.Concurrent.MVar
 import Control.Exception
 import Data.Aeson as JSON
+import qualified Data.ByteString.Lazy as BL
 
 -- For representing graphs
 import qualified Data.Vector as V
@@ -210,7 +211,7 @@ makeMain start_traverse ty = do
   let nanos = ((1000 * 1000 * 1000 * (fromIntegral first')) `quot` (fromIntegral freq :: Integer))
   putStrLn $ " In nanoseconds: "++commaint nanos
   putStrLn $ "FIRSTHIT " ++ show nanos
-  writeFile ("results-" ++ ty ++ "-" ++ tToStr t1) $
+  BL.writeFile ("results-" ++ ty ++ "-" ++ tToStr t1) $ encode $
     object [ "data" .=
              object
                [ "start" .= t0
