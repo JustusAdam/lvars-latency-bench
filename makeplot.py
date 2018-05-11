@@ -80,7 +80,7 @@ def zip_latest_files(arguments):
     with zipfile.ZipFile(fname, mode='w') as z:
         for ty, data_files in get_latest_n_files(arguments.num).items() if filterf(ty):
             for i, data_file in zip(itertools.count(), data_files):
-                z.write(data_file, ty + ('-' + n if n < 0 else '') + '.json')
+                z.write(data_file, ty + ('-' + n if n > 0 else '') + '.json')
             
 
 def plot_data(arguments):
