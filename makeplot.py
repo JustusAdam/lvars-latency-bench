@@ -94,8 +94,6 @@ def plot_data(arguments):
     samplewidth = 100
     #samplewidth = max_len / arguments.buckets
 
-    print samplewidth
-
     fig = plt.figure()
 
 
@@ -112,7 +110,7 @@ def plot_data(arguments):
 
     for i in range(experiments):
         
-        ax = fig.add_subplot(gridx,gridy, i)
+        ax = fig.add_subplot(gridx,gridy, i + 1)
 
         for ty, full_data in d[i].items():
             data = full_data["data"]
@@ -130,7 +128,8 @@ def plot_data(arguments):
             ax.plot(x[:arguments.slice_size], y[:arguments.slice_size], label=ty, **plotargs)
     if arguments.log_scale:
         ax.set_xscale('log')
-    ax.legend()
+    if not arguments.no_legend:
+        ax.legend()
     if save_location is None:
         plt.show()
     else:
@@ -157,6 +156,7 @@ def main():
     plot_parser.add_argument('--marker', default=None)
     plot_parser.add_argument('--linestyle', default=None)
     plot_parser.add_argument('--log-scale', action='store_true')
+    plot_parser.add_argument('--no-legend', default=False,  action='store_true')
     plot_parser.set_defaults(func=plot_data)
     z_parser = sp.add_parser('zip')
     z_parser.add_argument('-n', '--num', type=int, default=1)
