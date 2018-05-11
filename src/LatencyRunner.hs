@@ -178,7 +178,7 @@ makeMain start_traverse ty = do
       kilosins_per_micro = clocks_per_micro / (fromIntegral clocks_per_kilosin)
       numSins :: Rational       
       numSins = (fromIntegral wrk) * kilosins_per_micro * 1000
-      numSins' = round numSins
+      numSins' = fromIntegral wrk
 
       busy_waiter :: WorkFn
       busy_waiter n = unsafePerformIO $
