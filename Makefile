@@ -34,11 +34,11 @@ clean_data:
 
 run_benches:
 	stack build
-#	$(EXEC) ohua-sbfm-latency $(GRAPH_DATA_FILE) $(DEPTH) $(WORK) +RTS -N$(HIGH_CORES)
-#	$(EXEC) ohua-fbm-latency $(GRAPH_DATA_FILE) $(DEPTH) $(WORK) +RTS -N$(HIGH_CORES)
-#	$(EXEC) monad-par-latency $(GRAPH_DATA_FILE) $(DEPTH) $(WORK) +RTS -N$(HIGH_CORES)
+	$(EXEC) ohua-sbfm-latency $(GRAPH_DATA_FILE) $(DEPTH) $(WORK) +RTS -N$(HIGH_CORES)
+	$(EXEC) ohua-fbm-latency $(GRAPH_DATA_FILE) $(DEPTH) $(WORK) +RTS -N$(HIGH_CORES)
+	$(EXEC) monad-par-latency $(GRAPH_DATA_FILE) $(DEPTH) $(WORK) +RTS -N$(HIGH_CORES)
 	$(EXEC) strategies-latency $(GRAPH_DATA_FILE) $(DEPTH) $(WORK) +RTS -N$(HIGH_CORES)
-#	$(EXEC) LVar-latency $(GRAPH_DATA_FILE) $(DEPTH) $(WORK) +RTS -N$(HIGH_CORES)
+	$(EXEC) LVar-latency $(GRAPH_DATA_FILE) $(DEPTH) $(WORK) +RTS -N$(HIGH_CORES)
 
 make_plot:
 	python makeplot.py plot -o fig.png
