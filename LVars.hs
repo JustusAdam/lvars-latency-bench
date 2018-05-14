@@ -21,6 +21,7 @@ import Control.DeepSeq
 
 import LatencyRunner
 import Control.LVish.Unsafe
+import System.IO.Unsafe
 
 prnt :: String -> Par d s ()
 prnt str = trace str $ return ()
@@ -55,13 +56,16 @@ bf_traverse k !g !l_acc !seen_rank !new_rank f = do
                         IS.empty new_rank
         new_rank'  = IS.difference allNbr' seen_rank'
     
-    fork $ mapM_ (`insert` l_acc) (map (snd . f) $ IS.toList new_rank')
+    fork $ mapM_ (`insert` l_acc) (map ((\a -> a `deepseq` snd a) . f) $ IS.toList new_rank')
     bf_traverse (k-1) g l_acc seen_rank' new_rank' f
+
+forceA a = a `deepseq` pure a
 
 start_traverse :: Starter
 start_traverse k !g startNode f f1 = do
   begin <- currentTimeMillis
   lock <- newLock
+  lock2 <- newLock
   runParIO $ do        
         prnt $ " * Running on " ++ show numCapabilities ++ " parallel resources..."
         
@@ -78,14 +82,15 @@ start_traverse k !g startNode f f1 = do
         --set <- bf_traverse k g l_acc IS.empty (IS.singleton startNode)
         
         forEachHP (Just pool) l_acc (\i -> withLock lock $ do 
-                          
-                          arrivalStamp <- liftIO currentTimeMillis
                           (res, ts) <- withTimeStamp f1 i
                           insert res l_res
-                          insert (i, arrivalStamp) tsTracker
+                          insert (i, ts) tsTracker
                           
                       )
-        set <- bf_traverse k g l_acc IS.empty (IS.singleton startNode) f
+        set <- bf_traverse k g l_acc IS.empty (IS.singleton startNode) (\i -> unsafePerformIO $ withLock lock2 $ do
+                                                                           let a = f i
+                                                                           forceA a)
+                                                                           
         
         prnt $ " * Done with bf_traverse..."
         let size = IS.size set

@@ -317,7 +317,6 @@ type Lock = MVar ()
 newLock :: MonadIO m => m Lock
 newLock = liftIO $ newMVar ()
 
-{-# INLINE withLock #-}
 withLock :: MonadIO m => Lock -> m a -> m a
 withLock l ac = do
   () <- liftIO $ takeMVar l
