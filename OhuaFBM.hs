@@ -69,7 +69,7 @@ start_traverse k g startNode f f1 = do
                 nodeStream
         liftWithIndex
             2
-            (\gen -> withUnitState $ forceA $ map snd gen)
+            (\gen -> withUnitState $ fmap (map snd) $ forceA gen)
             processedStream
 
 main = do

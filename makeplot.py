@@ -12,7 +12,7 @@ DEFAULT_EXPERIMENTS = {
     'fbm' : 'ohua-fbm',
     'sfbm' : 'ohua-sbfm',
     'LVars' : 'LVar',
-    'monad-par' : 'monad-par',
+    'par' : 'monad-par',
     'strategies' : 'strategies'
 }
 
@@ -21,6 +21,14 @@ DEFAULT_EXPERIMENTS = {
 fst = lambda a : a[0]
 snd = lambda a : a[1]
 const = lambda a : lambda b : a
+
+def unzip(iterable):
+    l1 = []
+    l2 = []
+    for a, b in iterable:
+        l1.append(a)
+        l2.append(b)
+    return (l1, l2)
 
 def dmap(f, d):
     return { k : f(v) for k, v in d.items() }
@@ -205,7 +213,13 @@ def unzip_dict(d):
         keys.append(k)
         vals.append(v)
     return (keys, vals)
-        
+
+def rel(a, b):
+    if a > b:
+        return a / b
+    else:
+        return - (b / a)
+
 def plot_rts(arguments):
     import numpy
     import matplotlib.pyplot as plt
@@ -213,6 +227,9 @@ def plot_rts(arguments):
     d = None
 
     plotargs = {}
+
+    fig = plt.figure()
+    ax = fig.add_subplot(1,1,1)
 
     if arguments.linestyle is not None:
         plotargs['linestyle'] = arguments.linestyle
@@ -223,11 +240,18 @@ def plot_rts(arguments):
         d = json.load(f)
 
     for ty, d in d.items():
+        
         (ks, vs) = unzip(d)
-        x = numpy.array(map(lambda (a, b) : a / b, ks))
+        
+        x = numpy.array(map(lambda (a, b) : rel(a, b), ks))
+        print x
         y = numpy.array(vs)
-        plt.plot(x, y, label=ty, **plotargs)
-
+        ax.plot(x, y, label=ty, **plotargs)
+#    ax.set_xlim([min(x), max(x)])
+    if not arguments.no_legend:
+        plt.legend()
+    if arguments.log_scale:
+        ax.set_xscale('log')
     if arguments.output is None:
         plt.show()
     else:
@@ -269,6 +293,8 @@ def main():
     rt_plot_parser = sp.add_parser('plot-rt')
     rt_plot_parser.add_argument('--marker', default=None)
     rt_plot_parser.add_argument('--linestyle', default=None)
+    rt_plot_parser.add_argument('--no-legend', default=False,  action='store_true')
+    rt_plot_parser.add_argument('--log-scale', action='store_true')
 
     rt_plot_parser.set_defaults(func=plot_rts)
     
