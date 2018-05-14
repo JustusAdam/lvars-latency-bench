@@ -4,14 +4,14 @@ import json
 import itertools
 import sys
 import math
-from subprocess import call
+import subprocess as sp
 
 FNAME_PATTERN = re.compile("results-(\w+)-(\d+)")
 
 DEFAULT_EXPERIMENTS = {
     'fbm' : 'ohua-fbm',
-    'sfbm' : 'ohua-sfbm',
-    'LVars' : 'LVars',
+    'sfbm' : 'ohua-sbfm',
+    'LVars' : 'LVar',
     'monad-par' : 'monad-par',
     'strategies' : 'strategies'
 }
@@ -100,7 +100,7 @@ def avg_runtime(files):
     rts = []
 
     for f in files:
-        d = load_file(f)
+        d = load_file(f)['data']
         rts.append(d['finish'] - d['start'])
 
     return sum(rts) / len(rts)
@@ -108,14 +108,15 @@ def avg_runtime(files):
 RT_FILE = 'res-avg-rt.json'
 
 def run_repeatable(arguments):
-    import subprocess as sp
 
     experiments = arguments.select
 
+    sp.call(['stack', 'build'])
+    
     def run_for_work(producer_work, consumer_work):
         for e in experiments:
             for _ in range(arguments.repetitions):
-                sp.call('stack', 'exec', '--', DEFAULT_EXPERIMENTS[e] + '-latency', arguments.graph, str(arguments.depth), str(arguments.producer_work), str(arguments.consumer_work), '+RTS', '-N' + str(arguments.cores))
+                sp.check_call(['stack', 'exec', '--', DEFAULT_EXPERIMENTS[e] + '-latency', arguments.graph, str(arguments.depth), str(producer_work), str(consumer_work), '+RTS', '-N' + str(arguments.cores)])
 
         files = dselect(experiments, get_latest_n_files(arguments.repetitions))
 
@@ -141,7 +142,7 @@ def run_repeatable(arguments):
 
     for pw, cw in works:
         for ty, res in run_for_work(pw, cw).items():
-            results.setdefault(ty, {})[(pw, cw)] = res
+            results.setdefault(ty, []).append(((pw, cw), res))
 
     with open(RT_FILE, mode='w') as f:
         json.dump(results, f)
@@ -222,15 +223,15 @@ def plot_rts(arguments):
         d = json.load(f)
 
     for ty, d in d.items():
-        (ks, vs) = unzip_dict(d)
+        (ks, vs) = unzip(d)
         x = numpy.array(map(lambda (a, b) : a / b, ks))
         y = numpy.array(vs)
         plt.plot(x, y, label=ty, **plotargs)
 
-    if save_location is None:
+    if arguments.output is None:
         plt.show()
     else:
-        plt.savefig(save_location)
+        plt.savefig(arguments.output)
 
         
 def main():
@@ -260,7 +261,7 @@ def main():
     run_parser = sp.add_parser('run')
     run_parser.add_argument('-w', '--work', nargs='+')
     run_parser.add_argument('-s', '--select', nargs='*', default=DEFAULT_EXPERIMENTS)
-    run_parser.add_argument('-r', '--repetitions')
+    run_parser.add_argument('-r', '--repetitions', type=int)
     run_parser.add_argument('--depth', type=int)
     run_parser.add_argument('-c', '--cores', type=int, default=7)
     run_parser.add_argument('-g', '--graph')
