@@ -13,6 +13,7 @@ import           Control.Monad.Par (Par, runParIO)
 import           Control.Monad.Par.Combinator (parMap, parMapM, parFor, InclusiveRange(..))
 import           Debug.Trace (trace)
 import System.IO.Unsafe
+import Control.DeepSeq
 
 import LatencyRunner
 
@@ -49,7 +50,8 @@ bf_traverse k !g !seen_rank !new_rank f = do
     let seen_rank' = IS.union seen_rank new_rank
         allNbr'    = IS.fold (\i acc -> IS.union (g V.! i) acc) 
                         IS.empty new_rank
-        new_rank'  = IS.fromList $ map (snd . f) $ IS.toList $ IS.difference allNbr' seen_rank'
+        new_rank'  = IS.map (snd . f) $ IS.difference allNbr' seen_rank'
+    new_rank' `deepseq` pure ()
     bf_traverse (k-1) g  seen_rank' new_rank' f
 
 start_traverse :: Starter

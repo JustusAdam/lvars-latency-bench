@@ -17,6 +17,7 @@ import           Debug.Trace (trace)
 import Control.Monad.IO.Class
 import Data.Time.Clock.POSIX
 import Control.Concurrent.MVar
+import Control.DeepSeq
 
 import LatencyRunner
 import Control.LVish.Unsafe
@@ -52,9 +53,9 @@ bf_traverse k !g !l_acc !seen_rank !new_rank f = do
     let seen_rank' = IS.union seen_rank new_rank
         allNbr'    = IS.fold (\i acc -> IS.union (g V.! i) acc) 
                         IS.empty new_rank
-        new_rank'  = IS.difference allNbr' seen_rank'
-
-    fork $ mapM_ (`insert` l_acc) (map (snd . f) $ IS.toList new_rank')
+        new_rank'  = IS.map (snd . f) $ IS.difference allNbr' seen_rank'
+    new_rank' `deepseq` pure ()
+    fork $ mapM_ (`insert` l_acc) (IS.toList new_rank')
     bf_traverse (k-1) g l_acc seen_rank' new_rank' f
 
 start_traverse :: Int       -- iteration counter

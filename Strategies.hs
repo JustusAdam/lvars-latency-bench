@@ -12,6 +12,7 @@ import qualified Data.Vector as V
 import           Data.Time.Clock (getCurrentTime, diffUTCTime)
 import qualified Control.Parallel.Strategies as Strat
 import System.IO.Unsafe
+import Control.DeepSeq
 
 import LatencyRunner
 
@@ -40,9 +41,10 @@ bf_pure k !g  !seen_rank !new_rank !f = do
         allNbr'    = IS.fold (\i acc -> IS.union (g V.! i) acc) 
                         IS.empty new_rank
         new_rank'  = IS.difference allNbr' seen_rank'
-        ls = IS.toList new_rank'
-        r = map (snd . f) ls
-    bf_pure (k-1) g seen_rank' (IS.fromList r) f
+        
+        r = IS.map (snd . f) new_rank'
+    r `deepseq` 
+      bf_pure (k-1) g seen_rank' rg f
 
 
 start_traverse :: Starter
