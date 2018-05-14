@@ -144,12 +144,13 @@ makeMain start_traverse ty = do
   
   -- LK: this way of writing the type annotations is the only way I
   -- can get emacs to not think this is a parse error! :(
-  let (graphFile,depthK,wrk) = 
+  let (graphFile,depthK,wrk, cwrk) = 
         case args of
-          []                   -> (graphFile_, k_, w_)
-          [graphFiles]         -> (graphFiles, k_, w_)
-          [graphFiles, ks]     -> (graphFiles, read ks, w_)
-          [graphFiles, ks, ws] -> (graphFiles, read ks, read ws :: Word64)
+          []                   -> (graphFile_, k_, w_, w_)
+          [graphFiles]         -> (graphFiles, k_, w_, w_)
+          [graphFiles, ks]     -> (graphFiles, read ks, w_, w_)
+          [graphFiles, ks, ws] -> (graphFiles, read ks, read ws :: Word64, w_)
+          [graphFiles, ks, ws, cw] -> (graphFiles, read ks, read ws :: Word64, read cw)
   
   gr <- mkGraphFromFile graphFile
 
@@ -201,6 +202,7 @@ makeMain start_traverse ty = do
 --  graphThunk sin_iter_count
   ctime <- currentTimeMillis
   res <- graphThunk busy_waiter
+  ftime <- currentTimeMillis
   t1 <- getCurrentTime
   putStrLn $ "SELFTIMED " ++ show (diffUTCTime t1 t0) ++ "\n"
 
@@ -216,6 +218,7 @@ makeMain start_traverse ty = do
              object
                [ "start" .= ctime
                , "arrivals" .= res
+               , "finish" .= ftime
                ]
            , "parameters" .=
              object [ "work" .= wrk

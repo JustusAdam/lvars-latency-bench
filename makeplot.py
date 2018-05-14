@@ -8,14 +8,26 @@ from subprocess import call
 
 FNAME_PATTERN = re.compile("results-(\w+)-(\d+)")
 
+DEFAULT_EXPERIMENTS = {
+    'fbm' : 'ohua-fbm',
+    'sfbm' : 'ohua-sfbm',
+    'LVars' : 'LVars',
+    'monad-par' : 'monad-par',
+    'strategies' : 'strategies'
+}
+
 #plt.style.use("ggplot")
 
 fst = lambda a : a[0]
 snd = lambda a : a[1]
-const = lambda a, b : a
+const = lambda a : lambda b : a
 
 def dmap(f, d):
     return { k : f(v) for k, v in d.items() }
+
+def dselect(items, d):
+    allowed = frozenset(items)
+    return { k : v for k,v in d.items() if k in allowed }
 
 def load_file(fname):
     with open(fname) as f:
@@ -56,7 +68,7 @@ def get_data(arguments):
 
 
 def get_latest_files():
-    return dmap(fst, get_latest_files(1))
+    return dmap(fst, get_latest_n_files(1))
 
 def get_latest_n_files(n):
     result_files = glob.glob("results-*")
@@ -76,14 +88,64 @@ def zip_latest_files(arguments):
 
     restrictions = arguments.restrict
 
-    filterf = (lambda a : a in frozenset(restrictions)) if restrictions is not None else lambda a : True
+    filterf = (lambda a : a in frozenset(restrictions)) if restrictions is not None else const(True)
     
     with zipfile.ZipFile(fname, mode='w') as z:
         for ty, data_files in get_latest_n_files(arguments.num).items():
             if filterf(ty):
                 for i, data_file in zip(itertools.count(), data_files):
                     z.write(data_file, ty + ('-' + str(i) if i > 0 else '') + '.json')
-            
+
+def avg_runtime(files):
+    rts = []
+
+    for f in files:
+        d = load_file(f)
+        rts.append(d['finish'] - d['start'])
+
+    return sum(rts) / len(rts)
+
+RT_FILE = 'res-avg-rt.json'
+
+def run_repeatable(arguments):
+    import subprocess as sp
+
+    experiments = arguments.select
+
+    def run_for_work(producer_work, consumer_work):
+        for e in experiments:
+            for _ in range(arguments.repetitions):
+                sp.call('stack', 'exec', '--', DEFAULT_EXPERIMENTS[e] + '-latency', arguments.graph, str(arguments.depth), str(arguments.producer_work), str(arguments.consumer_work), '+RTS', '-N' + str(arguments.cores))
+
+        files = dselect(experiments, get_latest_n_files(arguments.repetitions))
+
+        return dmap(avg_runtime, files)
+
+    def extract_work(s):
+        pw = None
+        cw = None
+
+        if ':' in s:
+            pws, cws = s.split(':', 1)
+            pw = int(pws)
+            cw = int(cws)
+        else:
+            pw = int(s)
+            cw = pw
+        return (pw, cw)
+    
+    
+    works = map(extract_work, arguments.work)
+
+    results = {}
+
+    for pw, cw in works:
+        for ty, res in run_for_work(pw, cw).items():
+            results.setdefault(ty, {})[(pw, cw)] = res
+
+    with open(RT_FILE, mode='w') as f:
+        json.dump(results, f)
+    
 
 def plot_data(arguments):
     import numpy
@@ -135,7 +197,33 @@ def plot_data(arguments):
     else:
         plt.savefig(save_location)
 
+def unzip_dict(d):
+    keys = []
+    vals = []
+    for k, v in d:
+        keys.append(k)
+        vals.append(v)
+    return (keys, vals)
+        
+def plot_rts(arguments):
+    import numpy
+    import matplotlib.pyplot as plt
 
+    d = None
+    
+    with open(RT_FILE, mode='r') as f:
+        d = json.load(f)
+
+    for ty, d in d.items():
+        (ks, vs) = unzip_dict(d)
+        x = numpy.array(map(lambda (a, b) : a / b, ks))
+        y = numpy.array(vs)
+        plt.plot(x, y, label=ty)
+
+    if save_location is None:
+        plt.show()
+    else:
+        plt.savefig(save_location)
 
         
 def main():
@@ -162,6 +250,18 @@ def main():
     z_parser.add_argument('-n', '--num', type=int, default=1)
     z_parser.add_argument('-r', '--restrict', nargs='*')
     z_parser.set_defaults(func=zip_latest_files)
+    run_parser = sp.add_parser('run')
+    run_parser.add_argument('-w', '--work')
+    run_parser.add_argument('-s', '--select', nargs='*', default=DEFAULT_EXPERIMENTS)
+    run_parser.add_argument('-r', '--repetitions')
+    run_parser.add_argument('--depth', type=int)
+    run_parser.add_argument('-c', '--cores', type=int, default=7)
+    run_parser.add_argument('-g', '--graph')
+    run_parser.set_defaults(func=run_repeatable)
+    rt_plot_parser = sp.add_parser('plot-rt')
+
+    rt_plot_parser.set_defaults(func=plot_rts)
+    
 
     res = parser.parse_args()
     
