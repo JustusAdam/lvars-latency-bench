@@ -44,7 +44,7 @@ bf_pure k !g  !seen_rank !new_rank !f = do
         
         r = IS.map (snd . f) new_rank'
     r `deepseq` 
-      bf_pure (k-1) g seen_rank' rg f
+      bf_pure (k-1) g seen_rank' r f
 
 
 start_traverse :: Starter
