@@ -43,8 +43,7 @@ bf_pure k !g  !seen_rank !new_rank !f = do
         new_rank'  = IS.difference allNbr' seen_rank'
         
         r = IS.map (snd . f) new_rank'
-    r `deepseq` 
-      bf_pure (k-1) g seen_rank' r f
+    bf_pure (k-1) g seen_rank' r f
 
 
 start_traverse :: Starter

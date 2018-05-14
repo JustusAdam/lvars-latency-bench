@@ -54,7 +54,7 @@ bf_traverse k !g !l_acc !seen_rank !new_rank f = do
         allNbr'    = IS.fold (\i acc -> IS.union (g V.! i) acc) 
                         IS.empty new_rank
         new_rank'  = IS.map (snd . f) $ IS.difference allNbr' seen_rank'
-    new_rank' `deepseq` pure ()
+    
     fork $ mapM_ (`insert` l_acc) (IS.toList new_rank')
     bf_traverse (k-1) g l_acc seen_rank' new_rank' f
 
