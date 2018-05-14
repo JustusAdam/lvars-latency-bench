@@ -2,7 +2,7 @@ flags: {}
 packages:
   - .
   - location:
-      commit: c9a013e58c4e391b7d4b7cd14456fca31e866f27
+      commit: 1dfee2a467cf0bd9a7655ade96e80f46ab3ecdb5
       git: git@bitbucket.com:nrink/statefulness
       #../statefulness
     extra-dep: true
