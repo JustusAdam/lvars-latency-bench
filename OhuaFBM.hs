@@ -36,7 +36,7 @@ bf_generate k0 startNode g f () =
                     new_rank' = IS.difference allNbr' seen_rank'
                     ls = IS.toList new_rank'
                     res = map (snd . f) ls
-                forceA res
+                new_rank' `seq` pure ()
                 (foldableGenerator res `mappend`
                  gen seen_rank' (pred k) new_rank')
      in (gen mempty k0 [startNode] :: Generator IO Int)
