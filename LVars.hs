@@ -58,12 +58,8 @@ bf_traverse k !g !l_acc !seen_rank !new_rank f = do
     fork $ mapM_ (`insert` l_acc) (map (snd . f) $ IS.toList new_rank')
     bf_traverse (k-1) g l_acc seen_rank' new_rank' f
 
-start_traverse :: Int       -- iteration counter
-                  -> Graph2 -- graph
-                  -> Int    -- start node
-                  -> WorkFn -- function to be applied to each node
-                  -> IO [Integer]
-start_traverse k !g startNode f = do
+start_traverse :: Starter
+start_traverse k !g startNode f f1 = do
   begin <- currentTimeMillis
   lock <- newLock
   runParIO $ do        
@@ -84,7 +80,7 @@ start_traverse k !g startNode f = do
         forEachHP (Just pool) l_acc (\i -> withLock lock $ do 
                           
                           arrivalStamp <- liftIO currentTimeMillis
-                          (res, ts) <- withTimeStamp f i
+                          (res, ts) <- withTimeStamp f1 i
                           insert res l_res
                           insert (i, arrivalStamp) tsTracker
                           

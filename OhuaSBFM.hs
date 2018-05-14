@@ -55,14 +55,14 @@ withUnitState :: StateT () IO a -> StateT () IO a
 withUnitState = id
 
 start_traverse :: Starter
-start_traverse k g startNode f = do
+start_traverse k g startNode f f1 = do
     algo <-
         createAlgo $ do
             unit <- sfConst' ()
             nodeStream <- liftWithIndex 0 (bf_generate k startNode g f) unit
             processedStream <-
                 smapGen
-                    (liftWithIndex 1 $ withUnitState . withTimeStamp f)
+                    (liftWithIndex 1 $ withUnitState . withTimeStamp f1)
                     nodeStream
             liftWithIndex
                 2

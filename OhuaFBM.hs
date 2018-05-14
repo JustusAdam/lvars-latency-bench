@@ -51,7 +51,7 @@ withUnitState :: SFM () a -> SFM () a
 withUnitState = id
 
 start_traverse :: Starter
-start_traverse k g startNode f = do
+start_traverse k g startNode f f1 = do
     begin <- currentTimeMillis
     (stamps, _) <-
         runOhuaM algo $
@@ -65,7 +65,7 @@ start_traverse k g startNode f = do
         nodeStream <- liftWithIndex 0 (bf_generate k startNode g f) ()
         processedStream <-
             smapGen
-                (liftWithIndex 1 $ withUnitState . withTimeStamp f)
+                (liftWithIndex 1 $ withUnitState . withTimeStamp f1)
                 nodeStream
         liftWithIndex
             2

@@ -55,7 +55,7 @@ bf_traverse k !g !seen_rank !new_rank f = do
     bf_traverse (k-1) g  seen_rank' new_rank' f
 
 start_traverse :: Starter
-start_traverse k !g startNode f = do
+start_traverse k !g startNode f f1 = do
     begin <- currentTimeMillis
     lock <- newLock
     runParIO $ do
@@ -64,7 +64,7 @@ start_traverse k !g startNode f = do
         -- pass in { startNode } as the initial "new" set
         set <- bf_traverse k g IS.empty (IS.singleton startNode) f
         prnt $ " * Done with bf_traverse..."
-        resLs <- parMap (unsafePerformIO . withLock lock . withTimeStamp f) (IS.toList set)
+        resLs <- parMap (unsafePerformIO . withLock lock . withTimeStamp f1) (IS.toList set)
         let set2 = Set.fromList $ map fst resLs
         prnt $ " * Done parMap(f)..."
         prnt $ "  * Set size: " ++ show (Set.size set2)

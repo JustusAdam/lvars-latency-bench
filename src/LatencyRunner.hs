@@ -120,6 +120,7 @@ dbg = False -- Let it inline, DCE.
 type Starter = Int       -- iteration counter
                -> Graph2 -- graph
                -> Int    -- start node
+               -> WorkFn
                -> WorkFn -- function to be applied to each node
                -> IO [Integer]
 
@@ -158,11 +159,9 @@ makeMain start_traverse ty = do
       gr2 = V.map IS.fromList gr
   evaluate (gr2 V.! 0)
   
-  let graphThunk :: WorkFn -> IO [Integer]
-      graphThunk fn = do
-        res <- start_traverse depthK gr2 0 fn
-        putStrLn "All done."
-        pure res
+  let graphThunk :: WorkFn -> WorkFn -> IO [Integer]
+      graphThunk fn0 fn1 = 
+        start_traverse depthK gr2 0 fn0 fn1
   
   -- Takes a node ID (which is just an int) and returns it paired with
   -- a floating-point number that's the value of iterating the sin
@@ -181,10 +180,13 @@ makeMain start_traverse ty = do
       numSins = (fromIntegral wrk) * kilosins_per_micro * 1000
       numSins' = fromIntegral wrk
 
-      busy_waiter :: WorkFn
-      busy_waiter n = unsafePerformIO $
+      consumer_waiter :: WorkFn
+      consumer_waiter n = unsafePerformIO $
 --        wait_microsecs (wrk * clocks_per_micro) n
-        wait_sins numSins' n
+        wait_sins (fromIntegral cwrk) n
+
+      producer_waiter :: WorkFn
+      producer_waiter = unsafePerformIO . wait_sins (fromIntegral wrk)
 
   printf "CPU Frequency: %s, clocks per microsecond %s\n"
            (commaint freq) (commaint (round clocks_per_micro))
@@ -201,7 +203,7 @@ makeMain start_traverse ty = do
   startT <- rdtsc  
 --  graphThunk sin_iter_count
   ctime <- currentTimeMillis
-  res <- graphThunk busy_waiter
+  res <- graphThunk producer_waiter consumer_waiter
   ftime <- currentTimeMillis
   t1 <- getCurrentTime
   putStrLn $ "SELFTIMED " ++ show (diffUTCTime t1 t0) ++ "\n"
