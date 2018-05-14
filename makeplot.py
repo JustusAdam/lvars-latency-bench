@@ -210,6 +210,13 @@ def plot_rts(arguments):
     import matplotlib.pyplot as plt
 
     d = None
+
+    plotargs = {}
+
+    if arguments.linestyle is not None:
+        plotargs['linestyle'] = arguments.linestyle
+    if arguments.marker is not None:
+        plotargs['marker'] = arguments.marker
     
     with open(RT_FILE, mode='r') as f:
         d = json.load(f)
@@ -218,7 +225,7 @@ def plot_rts(arguments):
         (ks, vs) = unzip_dict(d)
         x = numpy.array(map(lambda (a, b) : a / b, ks))
         y = numpy.array(vs)
-        plt.plot(x, y, label=ty)
+        plt.plot(x, y, label=ty, **plotargs)
 
     if save_location is None:
         plt.show()
@@ -251,7 +258,7 @@ def main():
     z_parser.add_argument('-r', '--restrict', nargs='*')
     z_parser.set_defaults(func=zip_latest_files)
     run_parser = sp.add_parser('run')
-    run_parser.add_argument('-w', '--work')
+    run_parser.add_argument('-w', '--work', nargs='+')
     run_parser.add_argument('-s', '--select', nargs='*', default=DEFAULT_EXPERIMENTS)
     run_parser.add_argument('-r', '--repetitions')
     run_parser.add_argument('--depth', type=int)
@@ -259,6 +266,8 @@ def main():
     run_parser.add_argument('-g', '--graph')
     run_parser.set_defaults(func=run_repeatable)
     rt_plot_parser = sp.add_parser('plot-rt')
+    rt_plot_parser.add_argument('--marker', default=None)
+    rt_plot_parser.add_argument('--linestyle', default=None)
 
     rt_plot_parser.set_defaults(func=plot_rts)
     
