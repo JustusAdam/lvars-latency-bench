@@ -38,7 +38,7 @@ bf_generate k0 startNode g f () =
                     ls = IS.toList new_rank'
                     res = map (snd . f) ls
                 new_rank' `seq` pure ()
-                (foldableGenerator res `mappend`
+                (foldableGenerator' res `mappend`
                  gen seen_rank' (pred k) new_rank')
           where
             finishTraverse =
