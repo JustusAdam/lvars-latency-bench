@@ -5,6 +5,7 @@ import itertools
 import sys
 import math
 import subprocess as sp
+from fractions import Fraction
 
 FNAME_PATTERN = re.compile("results-(\w+)-(\d+)")
 
@@ -21,6 +22,9 @@ DEFAULT_EXPERIMENTS = {
 fst = lambda a : a[0]
 snd = lambda a : a[1]
 const = lambda a : lambda b : a
+
+# FIXME put actual set size here
+SET_SIZE = 200000
 
 def unzip(iterable):
     l1 = []
@@ -111,7 +115,7 @@ def avg_runtime(files):
         d = load_file(f)['data']
         rts.append(d['finish'] - d['start'])
 
-    return sum(rts) / len(rts)
+    return Fraction(sum(rts) , len(rts))
 
 RT_FILE = 'res-avg-rt.json'
 
@@ -122,11 +126,18 @@ def run_repeatable(arguments):
     sp.call(['stack', 'build'])
     
     def run_for_work(producer_work, consumer_work):
+        pwrk = str(producer_work)
+        cwrk = str(consumer_work)
+        depth = str(arguments.depth)
+        cores = arguments.cores
+        executable = DEFAULT_EXPERIMENTS[e] + '-latency'
+        reps = arguments.repetitions
         for e in experiments:
-            for _ in range(arguments.repetitions):
-                sp.check_call(['stack', 'exec', '--', DEFAULT_EXPERIMENTS[e] + '-latency', arguments.graph, str(arguments.depth), str(producer_work), str(consumer_work), '+RTS', '-N' + str(arguments.cores)])
+            for i in range(reps):
+                print "Running {0} with {1} producer work and {2} consumer work on {4} cores, repetition {3}".format(e, pwrk, cwrk, i, cores)
+                sp.check_call(['stack', 'exec', '--', executable, arguments.graph, depth, pwrk, cwrk, '+RTS', '-N' + cores])
 
-        files = dselect(experiments, get_latest_n_files(arguments.repetitions))
+        files = dselect(experiments, get_latest_n_files(reps))
 
         return dmap(avg_runtime, files)
 
@@ -215,10 +226,10 @@ def unzip_dict(d):
     return (keys, vals)
 
 def rel(a, b):
-    if a > b:
-        return a / b
+    if a >= b:
+        return Fraction(a, b) - 1
     else:
-        return - (b / a)
+        return 1 - Fraction(b, a)
 
 def plot_rts(arguments):
     import numpy
@@ -244,8 +255,8 @@ def plot_rts(arguments):
         (ks, vs) = unzip(d)
         
         x = numpy.array(map(lambda (a, b) : rel(a, b), ks))
-        print x
-        y = numpy.array(vs)
+        
+        y = numpy.array(map(lambda v : Fraction(SET_SIZE, v), vs))
         ax.plot(x, y, label=ty, **plotargs)
 #    ax.set_xlim([min(x), max(x)])
     if not arguments.no_legend:
