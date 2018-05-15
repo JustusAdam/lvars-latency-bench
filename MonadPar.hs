@@ -58,11 +58,12 @@ start_traverse :: Starter
 start_traverse k !g startNode f f1 = do
     begin <- currentTimeMillis
     lock <- newLock
+    lock2 <- newLock
     runParIO $ do
         prnt $
             " * Running on " ++ show numCapabilities ++ " parallel resources..."
         -- pass in { startNode } as the initial "new" set
-        set <- bf_traverse k g IS.empty (IS.singleton startNode) f
+        set <- bf_traverse k g IS.empty (IS.singleton startNode) (unsafePerformIO . withLock lock2 . pure . f)
         prnt $ " * Done with bf_traverse..."
         resLs <- parMap (unsafePerformIO . withLock lock . withTimeStamp f1) (IS.toList set)
         let set2 = Set.fromList $ map fst resLs

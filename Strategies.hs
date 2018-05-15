@@ -50,8 +50,9 @@ start_traverse :: Starter
 start_traverse k !g startNode f f1 = do
     ncap <- getNumCapabilities
     lock <- newLock
+    lock2 <- newLock
     putStrLn $ " * Running on " ++ show ncap ++ " parallel resources..."
-    let set = bf_pure k g IS.empty (IS.singleton startNode) f
+    let set = bf_pure k g IS.empty (IS.singleton startNode) (unsafePerformIO . withLock lock2 . pure . f)
         l =
             Strat.withStrategy
                 (Strat.parBuffer 16 Strat.rdeepseq)
