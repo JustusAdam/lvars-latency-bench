@@ -130,9 +130,9 @@ def run_repeatable(arguments):
         cwrk = str(consumer_work)
         depth = str(arguments.depth)
         cores = arguments.cores
-        executable = DEFAULT_EXPERIMENTS[e] + '-latency'
         reps = arguments.repetitions
         for e in experiments:
+            executable = DEFAULT_EXPERIMENTS[e] + '-latency'
             for i in range(reps):
                 print "Running {0} with {1} producer work and {2} consumer work on {4} cores, repetition {3}".format(e, pwrk, cwrk, i, cores)
                 sp.check_call(['stack', 'exec', '--', executable, arguments.graph, depth, pwrk, cwrk, '+RTS', '-N' + cores])
