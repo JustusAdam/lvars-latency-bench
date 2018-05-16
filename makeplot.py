@@ -1,3 +1,4 @@
+from __future__ import print_function
 import glob
 import re
 import json
@@ -28,6 +29,9 @@ const = lambda a : lambda b : a
 
 # FIXME put actual set size here
 SET_SIZE = 200000
+
+def eprint(*args, **kwargs):
+    print(*args, file=sys.stderr, **kwargs)
 
 def unzip(iterable):
     l1 = []
@@ -118,7 +122,7 @@ def avg_runtime(files):
         d = load_file(f)['data']
         rts.append(d['finish'] - d['start'])
 
-    return Fraction(sum(rts) , len(rts))
+    return long(sum(rts)) / long(len(rts))
 
 
 def run_repeatable(arguments):
@@ -131,12 +135,12 @@ def run_repeatable(arguments):
         pwrk = str(producer_work)
         cwrk = str(consumer_work)
         depth = str(arguments.depth)
-        cores = arguments.cores
+        cores = str(arguments.cores)
         reps = arguments.repetitions
         for e in experiments:
             executable = DEFAULT_EXPERIMENTS[e] + '-latency'
             for i in range(reps):
-                print "Running {0} with {1} producer work and {2} consumer work on {4} cores, repetition {3}".format(e, pwrk, cwrk, i, cores)
+                eprint("Running {0} with {1} producer work and {2} consumer work on {4} cores, repetition {3}".format(e, pwrk, cwrk, i, cores))
                 sp.check_call(['stack', 'exec', '--', executable, arguments.graph, depth, pwrk, cwrk, '+RTS', '-N' + cores])
 
         files = dselect(experiments, get_latest_n_files(reps))
