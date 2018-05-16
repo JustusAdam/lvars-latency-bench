@@ -5,4 +5,4 @@ import OhuaSBFMBase
 import Control.Monad.Stream.Par
 
 main = do
-  makeMain (start_traverse runParIO) "sfbm-par"
+  makeMain (start_traverse runParIO) "sfbmpar"

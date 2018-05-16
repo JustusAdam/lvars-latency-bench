@@ -12,7 +12,7 @@ FNAME_PATTERN = re.compile("results-(\w+)-(\d+)")
 
 DEFAULT_EXPERIMENTS = {
     'fbm' : 'ohua-fbm',
-    'sfbm' : 'ohua-sbfm',
+    'sbfm' : 'ohua-sbfm',
     'sbfmpar' : 'ohua-sbfm-par',
     'LVars' : 'LVar',
     'par' : 'monad-par',
