@@ -12,10 +12,13 @@ FNAME_PATTERN = re.compile("results-(\w+)-(\d+)")
 DEFAULT_EXPERIMENTS = {
     'fbm' : 'ohua-fbm',
     'sfbm' : 'ohua-sbfm',
+    'sbfm-par' : 'ohua-sbfm-par',
     'LVars' : 'LVar',
     'par' : 'monad-par',
     'strategies' : 'strategies'
 }
+
+RT_FILE = 'res-avg-rt.json'
 
 #plt.style.use("ggplot")
 
@@ -117,7 +120,6 @@ def avg_runtime(files):
 
     return Fraction(sum(rts) , len(rts))
 
-RT_FILE = 'res-avg-rt.json'
 
 def run_repeatable(arguments):
 
@@ -225,11 +227,15 @@ def unzip_dict(d):
         vals.append(v)
     return (keys, vals)
 
+def div(a, b):
+    return Fraction(a, b)
+
 def rel(a, b):
+    
     if a >= b:
-        return Fraction(a, b) - 1
+        return div(a, b) - 1.0
     else:
-        return 1 - Fraction(b, a)
+        return 1.0 - div(b, a)
 
 def plot_rts(arguments):
     import numpy
@@ -256,7 +262,8 @@ def plot_rts(arguments):
         
         x = numpy.array(map(lambda (a, b) : rel(a, b), ks))
         
-        y = numpy.array(map(lambda v : Fraction(SET_SIZE, v), vs))
+        #y = numpy.array(map(lambda v : div(SET_SIZE, v), vs))
+        y = numpy.array(map(lambda v : v, vs))
         ax.plot(x, y, label=ty, **plotargs)
 #    ax.set_xlim([min(x), max(x)])
     if not arguments.no_legend:

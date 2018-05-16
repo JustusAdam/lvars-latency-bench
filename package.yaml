@@ -56,6 +56,7 @@ dependencies:
 library:
   exposed-modules:
     - LatencyRunner
+    - OhuaSBFMBase
   source-dirs: src
 executables:
   ohua-fbm-latency:
@@ -63,6 +64,9 @@ executables:
     dependencies: latency-bench
   ohua-sbfm-latency:
     main: OhuaSBFM.hs
+    dependencies: latency-bench
+  ohua-sbfm-par-latency:
+    main: OhuaSBFMPar.hs
     dependencies: latency-bench
   LVar-latency:
     main: LVars.hs

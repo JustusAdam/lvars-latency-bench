@@ -13,6 +13,7 @@ import           Data.Time.Clock (getCurrentTime, diffUTCTime)
 import qualified Control.Parallel.Strategies as Strat
 import System.IO.Unsafe
 import Control.DeepSeq
+import Text.Printf
 
 import LatencyRunner
 
@@ -59,6 +60,7 @@ start_traverse k !g startNode f f1 = do
                 (map (unsafePerformIO . withLock lock . withTimeStamp f1) (IS.toList set))
         set2 = Set.fromList $ map fst l
         size = Set.size set2
+    printf "Set size %d" (IS.size set)
     t0 <- getCurrentTime
     begin <- currentTimeMillis
     evaluate set

@@ -1,5 +1,5 @@
 {-# LANGUAGE BangPatterns, OverloadedStrings #-}
-{-# LANGUAGE DoAndIfThenElse #-}
+{-# LANGUAGE DoAndIfThenElse, LambdaCase #-}
 
 module LatencyRunner where 
 
@@ -52,33 +52,27 @@ type Node = Int
 -- Optimized version:
 mkGraphFromFile :: String -> IO Graph
 mkGraphFromFile file = do
-  putStrLn $ "* Begin loading graph from " ++ file ++ "..." 
-  t0    <- getCurrentTime
-  inStr <- B.readFile file
-  let -- Returns a list of edges:
-      loop1 [] = []
-      loop1 (b1:b2:rst) = do
-        case (B.readInt b1, B.readInt b2) of
-          (Just (src, _), Just (dst, _)) -> (src, dst) : loop1 rst
-          _ -> error $ "Failed parse of bytestrings: " ++ show (B.unwords[b1, b2])
-      loop1 _ = error "Odd number of integers in graph file!"
-
-  let edges = case B.words inStr of
-               ("EdgeArray":rst) -> loop1 rst
-      mx = foldl' (\mx (s,d) -> mx `max` s `max` d) 0 edges
-  mg <- MV.replicate (mx+1) []
-  forM_ edges $ \ (src,dst) -> do
-    -- Interpret this as a DIRECTED graph:    
-    ls <- MV.read mg src
-    MV.write mg src (dst:ls)
-  g <- V.freeze mg
-  -- Just to make SURE it's computed:
-  putStrLn $ " * Graph loaded: " 
-    ++ show(V.length g) ++ " vertices.  Neighbors of vertex 0: "
-    ++ show (nbrs g 0)
-  t1 <- getCurrentTime
-  putStrLn $ " * Time reading/parsing data: " ++ show(diffUTCTime t1 t0)
-  return g
+    inStr <- B.readFile file
+      -- Returns a list of edges:
+    let loop1 [] = []
+        loop1 (b1:b2:rst) = do
+            case (B.readInt b1, B.readInt b2) of
+                (Just (src, _), Just (dst, _)) -> (src, dst) : loop1 rst
+                _ ->
+                    error $
+                    "Failed parse of bytestrings: " ++ show (B.unwords [b1, b2])
+        loop1 _ = error "Odd number of integers in graph file!"
+        edges =
+            case B.words inStr of
+                ("EdgeArray":rst) -> loop1 rst
+        mx = foldl' (\mx (s, d) -> mx `max` s `max` d) 0 edges
+    mg <- MV.replicate (mx + 1) []
+    forM_ edges $ \(src, dst)
+    -- Interpret this as a DIRECTED graph:
+     -> do
+        ls <- MV.read mg src
+        MV.write mg src (dst : ls)
+    V.freeze mg
 
 -- Neighbors of a node with a given label
 nbrs :: Graph -> Int -> [Int]
@@ -87,9 +81,9 @@ nbrs g lbl = g V.! lbl
 -- For debugging
 printGraph :: Graph -> IO ()
 printGraph g = do
-  let ls = V.toList g
-  putStrLn (show ls)
-  return ()
+    let ls = V.toList g
+    putStrLn (show ls)
+    return ()
     
 -- Iterates the sin function n times on its input and returns the sum
 -- of all iterations.
@@ -127,120 +121,72 @@ type Starter = Int       -- iteration counter
 currentTimeMillis :: IO Integer
 currentTimeMillis = round . (* 1000) <$> getPOSIXTime
 
+(<&>) = flip fmap
+
 {-# INLINE makeMain #-}
 makeMain :: Starter -> String -> IO ()
 makeMain start_traverse ty = do
-  -- Fetch runtime parameters:
-  -- First, defaults:
-  let graphFile_ :: String
-      graphFile_ = "/tmp/grid_125000"
-  
-  let k_ :: Int
-      k_ = 25    -- Number of hops to explore
-      
-  let w_ :: Word64
-      w_ = 20000 -- Amount of work (iterations of sin)
-
-  args <- getArgs
-  
+    let graphFile_ :: String
+        graphFile_ = "/tmp/grid_125000"
+    let k_ :: Int
+        k_ = 25 -- Number of hops to explore
+    let w_ :: Word64
+        w_ = 20000 -- Amount of work (iterations of sin)
   -- LK: this way of writing the type annotations is the only way I
   -- can get emacs to not think this is a parse error! :(
-  let (graphFile,depthK,wrk, cwrk) = 
-        case args of
-          []                   -> (graphFile_, k_, w_, w_)
-          [graphFiles]         -> (graphFiles, k_, w_, w_)
-          [graphFiles, ks]     -> (graphFiles, read ks, w_, w_)
-          [graphFiles, ks, ws] -> (graphFiles, read ks, read ws :: Word64, w_)
-          [graphFiles, ks, ws, cw] -> (graphFiles, read ks, read ws :: Word64, read cw)
-  
-  gr <- mkGraphFromFile graphFile
-
-  let startNode = 0
-      gr2 = V.map IS.fromList gr
-  evaluate (gr2 V.! 0)
-  
-  let graphThunk :: WorkFn -> WorkFn -> IO [Integer]
-      graphThunk fn0 fn1 = 
-        start_traverse depthK gr2 0 fn0 fn1
-  
+    (graphFile, depthK, wrk, cwrk) <-
+        getArgs <&> \case
+            [] -> (graphFile_, k_, w_, w_)
+            [graphFiles] -> (graphFiles, k_, w_, w_)
+            [graphFiles, ks] -> (graphFiles, read ks, w_, w_)
+            [graphFiles, ks, ws] -> (graphFiles, read ks, read ws :: Word64, w_)
+            [graphFiles, ks, ws, cw] ->
+                (graphFiles, read ks, read ws :: Word64, read cw)
+    gr <- mkGraphFromFile graphFile
+    let startNode = 0
+        gr2 = V.map IS.fromList gr
+    evaluate (gr2 V.! 0)
+    let graphThunk :: WorkFn -> WorkFn -> IO [Integer]
+        graphThunk fn0 fn1 = start_traverse depthK gr2 0 fn0 fn1
   -- Takes a node ID (which is just an int) and returns it paired with
   -- a floating-point number that's the value of iterating the sin
   -- function wrk times on that node ID.
-  let sin_iter_count :: WorkFn
-      sin_iter_count x = let f = fromIntegral x in
-                         (sin_iter wrk f, x)
-
-  -- Reeeealllllly want to audit this code. -- LK
-  freq <- measureFreq
-  clocks_per_kilosin <- measureSin 1000
-  let clocks_per_micro, kilosins_per_micro :: Rational 
-      clocks_per_micro = (fromIntegral freq) / (1000 * 1000)
-      kilosins_per_micro = clocks_per_micro / (fromIntegral clocks_per_kilosin)
-      numSins :: Rational       
-      numSins = (fromIntegral wrk) * kilosins_per_micro * 1000
-      numSins' = fromIntegral wrk
-
-      consumer_waiter :: WorkFn
-      consumer_waiter n = unsafePerformIO $
---        wait_microsecs (wrk * clocks_per_micro) n
-        wait_sins (fromIntegral cwrk) n
-
-      producer_waiter :: WorkFn
-      producer_waiter = unsafePerformIO . wait_sins (fromIntegral wrk)
-
-  printf "CPU Frequency: %s, clocks per microsecond %s\n"
-           (commaint freq) (commaint (round clocks_per_micro))
-
-  printf "Time for 1K sins %s, Ksins per micro %s, numSins %s = %s\n"
-         (show clocks_per_kilosin) 
-         (show (fromRational kilosins_per_micro ::Double))
-         (show numSins) (show numSins')
-
-  printf "* Beginning benchmark with depthK=%d and wrk=%d\n" depthK wrk
-  
-  performGC
-  t0 <- getCurrentTime
-  startT <- rdtsc  
---  graphThunk sin_iter_count
-  ctime <- currentTimeMillis
-  res <- graphThunk producer_waiter consumer_waiter
-  ftime <- currentTimeMillis
-  t1 <- getCurrentTime
-  putStrLn $ "SELFTIMED " ++ show (diffUTCTime t1 t0) ++ "\n"
-
-  first <- readIORef first_hit
-  let first' = first - startT
-  putStrLn$"Start time in cycles: "++commaint startT      
-  putStrLn $ "First hit in raw clock cycles was " ++ commaint first'
-  let nanos = ((1000 * 1000 * 1000 * (fromIntegral first')) `quot` (fromIntegral freq :: Integer))
-  putStrLn $ " In nanoseconds: "++commaint nanos
-  putStrLn $ "FIRSTHIT " ++ show nanos
-  BL.writeFile ("results-" ++ ty ++ "-" ++ tToStr t1) $ encode $
-    object [ "data" .=
-             object
-               [ "start" .= ctime
-               , "arrivals" .= res
-               , "finish" .= ftime
-               ]
-           , "parameters" .=
-             object [ "work" .= wrk
-                    , "depth" .= depthK
-                    , "system" .= ty
-                    ]
-           ]
+    let sin_iter_count :: WorkFn
+        sin_iter_count x = (sin_iter wrk $ fromIntegral x, x)
+    let consumer_waiter :: WorkFn
+        consumer_waiter n = unsafePerformIO $ wait_sins (fromIntegral cwrk) n
+        producer_waiter :: WorkFn
+        producer_waiter = unsafePerformIO . wait_sins (fromIntegral wrk)
+    when verbose $
+        printf
+            "* Beginning benchmark with depthK=%d, wrk=%d and cwrk=%d \n"
+            depthK
+            wrk
+            cwrk
+    performGC
+    t0 <- getCurrentTime
+    ctime <- currentTimeMillis
+    res <- graphThunk producer_waiter consumer_waiter
+    ftime <- currentTimeMillis
+    t1 <- getCurrentTime
+    when verbose $ printf "SELFTIMED %d\n" (show (diffUTCTime t1 t0))
+    BL.writeFile ("results-" ++ ty ++ "-" ++ tToStr t1) $
+        encode $
+        object
+            [ "data" .=
+              object ["start" .= ctime, "arrivals" .= res, "finish" .= ftime]
+            , "parameters" .=
+              object ["work" .= wrk, "depth" .= depthK, "system" .= ty]
+            ]
   where
     tToStr = formatTime defaultTimeLocale "%s"
 
 ------------------------------------------------------------------------------------------
 
-first_hit :: IORef Word64
-first_hit = unsafePerformIO$ newIORef maxBound
-
 -- Wait for a certain number of milleseconds.
 wait_microsecs :: Word64 -> Node -> IO WorkRet
 wait_microsecs clocks n = do
   myT <- rdtsc
-  atomicModifyIORef first_hit (\ t -> (min t myT,()))
   let loop !n = do
         now <- rdtsc
         if now - myT >= clocks
@@ -254,52 +200,49 @@ wait_microsecs clocks n = do
 -- stay on the same core.
 measureFreq :: IO Word64 -- What units is this in? -- LK
 measureFreq = do
-  let millisecond = 1000 * 1000 * 1000 -- picoseconds are annoying
-      -- Measure for how long to be sure?      
---      measure = 200 * millisecond
-      measure = 1000 * millisecond      
-      scale :: Integer
-      scale = 1000 * millisecond `quot` measure
-  t1 <- rdtsc 
-  start <- getCPUTime
-  let loop :: Word64 -> Word64 -> IO (Word64,Word64)
-      loop !n !last = 
-        do t2 <- rdtsc 
-           when (t2 < last) $
-             putStrLn$ "COUNTERS WRAPPED "++ show (last,t2) 
-           cput <- getCPUTime    
-           if (cput - start < measure)
-             then loop (n+1) t2
-             else return (n,t2)
-  (n,t2) <- loop 0 t1
-  putStrLn$ "  Approx getCPUTime calls per second: "++ commaint (scale * fromIntegral n)
-  when (t2 < t1) $ 
-    putStrLn$ "WARNING: rdtsc not monotonically increasing, first "++show t1++" then "++show t2++" on the same OS thread"
-
-  return$ fromIntegral (fromIntegral scale * (t2 - t1))
+    let millisecond = 1000 * 1000 * 1000 -- picoseconds are annoying
+      -- Measure for how long to be sure?
+        measure = 1000 * millisecond
+        scale :: Integer
+        scale = 1000 * millisecond `quot` measure
+    t1 <- rdtsc
+    start <- getCPUTime
+    let loop :: Word64 -> Word64 -> IO (Word64, Word64)
+        loop !n !last = do
+            t2 <- rdtsc
+            when (t2 < last) $ putStrLn $ "COUNTERS WRAPPED " ++ show (last, t2)
+            cput <- getCPUTime
+            if (cput - start < measure)
+                then loop (n + 1) t2
+                else return (n, t2)
+    (n, t2) <- loop 0 t1
+    putStrLn $
+        "  Approx getCPUTime calls per second: " ++
+        commaint (scale * fromIntegral n)
+    when (t2 < t1) $
+        printf
+            "WARNING: rdtsc not monotonically increasing, first %d, then %d on the same OS thread"
+            t1
+            t2
+    return $ fromIntegral (fromIntegral scale * (t2 - t1))
 
 wait_sins :: Word64 -> Node -> IO WorkRet
 wait_sins num node = do
   myT <- rdtsc
-  atomicModifyIORef first_hit (\ t -> (min t myT,()))
   res <- evaluate (sin_iter num (2.222 + fromIntegral node))
   return (res, node)
 
 -- Measure the cost of N Sin operations.
 measureSin :: Word64 -> IO Word64
 measureSin n = do
-  t0 <- rdtsc
-  res <- evaluate (sin_iter n 38.38)
-  t1 <- rdtsc  
-  return$ t1-t0
+    t0 <- rdtsc
+    res <- evaluate (sin_iter n 38.38)
+    t1 <- rdtsc
+    return $ t1 - t0
 
 -- Readable large integer printing:
 commaint :: (Show a, Integral a) => a -> String
-commaint n = 
-   reverse $ concat $
-   intersperse "," $ 
-   chunksOf 3 $ 
-   reverse (show n)
+commaint n = reverse $ concat $ intersperse "," $ chunksOf 3 $ reverse (show n)
 
 
 {-# INLINE withTimeStamp #-}
@@ -319,7 +262,7 @@ newLock = liftIO $ newMVar ()
 
 withLock :: MonadIO m => Lock -> m a -> m a
 withLock l ac = do
-  () <- liftIO $ takeMVar l
-  res <- ac
-  liftIO $ putMVar l ()
-  pure res
+    () <- liftIO $ takeMVar l
+    res <- ac
+    liftIO $ putMVar l ()
+    pure res
