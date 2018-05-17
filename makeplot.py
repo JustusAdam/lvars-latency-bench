@@ -313,7 +313,7 @@ def main():
     run_parser.add_argument('--depth', type=int)
     run_parser.add_argument('-c', '--cores', type=int, default=7)
     run_parser.add_argument('-g', '--graph')
-    run_parser.add_argument('--no-average', type=bool)
+    run_parser.add_argument('--no-average', default=False, action='store_true')
     run_parser.set_defaults(func=run_repeatable)
     rt_plot_parser = sp.add_parser('plot-rt')
     rt_plot_parser.add_argument('--marker', default=None)
