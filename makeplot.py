@@ -71,7 +71,7 @@ def get_data(arguments):
             for ty in zf.namelist():
                 ty0 = ty.rstrip('.json')
                 sty = ty0.rsplit('-', 1)
-                
+
                 if len(sty) == 1:
                     ty1 = sty[0]
                     tyNum = 0
@@ -82,7 +82,7 @@ def get_data(arguments):
                     raise Exception("invalid split: " + sty)
 
                 files.setdefault(tyNum, {})[ty1] = process_open_data_file(zf.open(ty,mode='r'))
-        
+
             return [files[i] for i in range(len(files))]
 
 
@@ -108,29 +108,32 @@ def zip_latest_files(arguments):
     restrictions = arguments.restrict
 
     filterf = (lambda a : a in frozenset(restrictions)) if restrictions is not None else const(True)
-    
+
     with zipfile.ZipFile(fname, mode='w') as z:
         for ty, data_files in get_latest_n_files(arguments.num).items():
             if filterf(ty):
                 for i, data_file in zip(itertools.count(), data_files):
                     z.write(data_file, ty + ('-' + str(i) if i > 0 else '') + '.json')
 
+def get_runtime(file):
+    d = load_file(file)
+    return d['finish'] - d['start']
+
+load_runtimes = lambda files : list(map(get_runtime, files))
+
+
 def avg_runtime(files):
-    rts = []
-
-    for f in files:
-        d = load_file(f)['data']
-        rts.append(d['finish'] - d['start'])
-
+    rts = load_runtimes(files)
     return long(sum(rts)) / long(len(rts))
 
 
 def run_repeatable(arguments):
 
     experiments = arguments.select
+    get_data = load_runtimes if arguments.no_average else avg_runtime
 
     sp.call(['stack', 'build'])
-    
+
     def run_for_work(producer_work, consumer_work):
         pwrk = str(producer_work)
         cwrk = str(consumer_work)
@@ -144,8 +147,7 @@ def run_repeatable(arguments):
                 sp.check_call(['stack', 'exec', '--', executable, arguments.graph, depth, pwrk, cwrk, '+RTS', '-N' + cores])
 
         files = dselect(experiments, get_latest_n_files(reps))
-
-        return dmap(avg_runtime, files)
+        return dmap(get_data, files)
 
     def extract_work(s):
         pw = None
@@ -159,8 +161,8 @@ def run_repeatable(arguments):
             pw = int(s)
             cw = pw
         return (pw, cw)
-    
-    
+
+
     works = map(extract_work, arguments.work)
 
     results = {}
@@ -171,7 +173,7 @@ def run_repeatable(arguments):
 
     with open(RT_FILE, mode='w') as f:
         json.dump(results, f)
-    
+
 
 def plot_data(arguments):
     import numpy
@@ -197,7 +199,7 @@ def plot_data(arguments):
     gridy= gridx
 
     for i in range(experiments):
-        
+
         ax = fig.add_subplot(gridx,gridy, i + 1)
 
         for ty, full_data in d[i].items():
@@ -211,7 +213,7 @@ def plot_data(arguments):
                             for (b_num, items) in itertools.groupby(sorted(arrivals, key=bucket_num), bucket_num) }
             x = numpy.array(range(bucket_num(max_point)))
             y = numpy.array(map(lambda i : frequencies.get(i, 0), x))
-        
+
             #print (len(x),len(y))
             ax.plot(x[:arguments.slice_size], y[:arguments.slice_size], label=ty, **plotargs)
     if arguments.log_scale:
@@ -235,7 +237,7 @@ def div(a, b):
     return Fraction(a, b)
 
 def rel(a, b):
-    
+
     if a >= b:
         return div(a, b) - 1.0
     else:
@@ -256,16 +258,16 @@ def plot_rts(arguments):
         plotargs['linestyle'] = arguments.linestyle
     if arguments.marker is not None:
         plotargs['marker'] = arguments.marker
-    
+
     with open(RT_FILE, mode='r') as f:
         d = json.load(f)
 
     for ty, d in d.items():
-        
+
         (ks, vs) = unzip(d)
-        
+
         x = numpy.array(map(lambda (a, b) : rel(b, a), ks))
-        
+
         y = numpy.array(map(lambda v : div(SET_SIZE, v), vs))
         #y = numpy.array(map(lambda v : v, vs))
         ax.plot(x, y, label=ty, **plotargs)
@@ -279,7 +281,7 @@ def plot_rts(arguments):
     else:
         plt.savefig(arguments.output)
 
-        
+
 def main():
     import argparse
     parser = argparse.ArgumentParser()
@@ -311,6 +313,7 @@ def main():
     run_parser.add_argument('--depth', type=int)
     run_parser.add_argument('-c', '--cores', type=int, default=7)
     run_parser.add_argument('-g', '--graph')
+    run_parser.add_argument('--no-average', type=bool)
     run_parser.set_defaults(func=run_repeatable)
     rt_plot_parser = sp.add_parser('plot-rt')
     rt_plot_parser.add_argument('--marker', default=None)
@@ -319,10 +322,10 @@ def main():
     rt_plot_parser.add_argument('--log-scale', action='store_true')
 
     rt_plot_parser.set_defaults(func=plot_rts)
-    
+
 
     res = parser.parse_args()
-    
+
     res.func(res)
 
 
