@@ -13,10 +13,11 @@ FNAME_PATTERN = re.compile("results-(\w+)-(\d+)")
 DEFAULT_EXPERIMENTS = {
     'fbm' : 'ohua-fbm',
     'sfbm' : 'ohua-sbfm',
-    'sbfm-par' : 'ohua-sbfm-par',
+    'sbfmpar' : 'ohua-sbfm-par',
     'LVars' : 'LVar',
     'par' : 'monad-par',
-    'strategies' : 'strategies'
+    'strategies' : 'strategies',
+    'sequential' : 'sequential'
 }
 
 RT_FILE = 'res-avg-rt.json'
@@ -27,8 +28,7 @@ fst = lambda a : a[0]
 snd = lambda a : a[1]
 const = lambda a : lambda b : a
 
-# FIXME put actual set size here
-SET_SIZE = 200000
+SET_SIZE = 119964
 
 def eprint(*args, **kwargs):
     print(*args, file=sys.stderr, **kwargs)
@@ -264,10 +264,10 @@ def plot_rts(arguments):
         
         (ks, vs) = unzip(d)
         
-        x = numpy.array(map(lambda (a, b) : rel(a, b), ks))
+        x = numpy.array(map(lambda (a, b) : rel(b, a), ks))
         
-        #y = numpy.array(map(lambda v : div(SET_SIZE, v), vs))
-        y = numpy.array(map(lambda v : v, vs))
+        y = numpy.array(map(lambda v : div(SET_SIZE, v), vs))
+        #y = numpy.array(map(lambda v : v, vs))
         ax.plot(x, y, label=ty, **plotargs)
 #    ax.set_xlim([min(x), max(x)])
     if not arguments.no_legend:

@@ -74,6 +74,9 @@ executables:
   strategies-latency:
     main: Strategies.hs
     dependencies: latency-bench
+  sequential-latency:
+    main: Sequential.hs
+    dependencies: latency-bench
   monad-par-latency:
     main: MonadPar.hs
     dependencies: latency-bench

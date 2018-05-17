@@ -2,7 +2,7 @@
 --
 -- see: https://github.com/sol/hpack
 --
--- hash: 56feeec9c79635d15347edaaab5882f8726eabf693d045cd3df77fe3d7fe40ce
+-- hash: ec42761d4e733f29115d948d651d25005b31aa2baf0bd9aa64720c2286fd4f8f
 
 name:           latency-bench
 version:        0.1.0.0
@@ -148,6 +148,32 @@ executable ohua-sbfm-latency
 
 executable ohua-sbfm-par-latency
   main-is: OhuaSBFMPar.hs
+  ghc-options: -threaded -rtsopts -threaded -rtsopts -O2 -threaded -rtsopts
+  build-depends:
+      aeson
+    , base
+    , bytestring
+    , containers
+    , deepseq
+    , latency-bench
+    , lvish
+    , monad-par
+    , monad-par-extras
+    , mtl
+    , ohua-core
+    , parallel
+    , rdtsc
+    , split
+    , statefulness
+    , time
+    , transformers
+    , vector
+  other-modules:
+      Paths_latency_bench
+  default-language: Haskell2010
+
+executable sequential-latency
+  main-is: Sequential.hs
   ghc-options: -threaded -rtsopts -threaded -rtsopts -O2 -threaded -rtsopts
   build-depends:
       aeson

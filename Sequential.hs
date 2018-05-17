@@ -49,25 +49,14 @@ bf_pure k !g  !seen_rank !new_rank !f = do
 
 start_traverse :: Starter
 start_traverse k !g startNode f f1 = do
-    ncap <- getNumCapabilities
-    lock <- newLock
-    lock2 <- newLock
-    let set = bf_pure k g IS.empty (IS.singleton startNode) (unsafePerformIO . withLock lock2 . pure . f)
-        l =
-            Strat.withStrategy
-                (Strat.parBuffer 16 Strat.rdeepseq)
-                (map (unsafePerformIO . withLock lock . withTimeStamp f1) (IS.toList set))
+    let set = bf_pure k g IS.empty (IS.singleton startNode) f
+        l = map (unsafePerformIO . withTimeStamp f1) (IS.toList set)
         set2 = Set.fromList $ map fst l
         size = Set.size set2
-    t0 <- getCurrentTime
     begin <- currentTimeMillis
     evaluate set
-    t1 <- getCurrentTime
-    t2 <- getCurrentTime
-    print (diffUTCTime t2 t1)
     evaluate set2
     let ls = Set.toList set2
-    t3 <- getCurrentTime
     pure $ begin : map snd l
 
-main = makeMain start_traverse "strategies"
+main = makeMain start_traverse "sequential"
