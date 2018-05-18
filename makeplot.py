@@ -116,7 +116,7 @@ def zip_latest_files(arguments):
                     z.write(data_file, ty + ('-' + str(i) if i > 0 else '') + '.json')
 
 def get_runtime(file):
-    d = load_file(file)
+    d = load_file(file)['data']
     return d['finish'] - d['start']
 
 load_runtimes = lambda files : list(map(get_runtime, files))
