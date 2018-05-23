@@ -283,14 +283,14 @@ def run_repeatable(arguments):
 
 def run_config(cfg):
     e = cfg['experiment']
-    pwrk = cfg['work']['producer']
-    cwrk = cfg['work']['consumer']
-    cores = cfg['cores']
+    pwrk = str(cfg['work']['producer'])
+    cwrk = str(cfg['work']['consumer'])
+    cores = str(cfg['cores'])
     reps = cfg['repetitions']
-    depth = cfg['depth']
+    depth = str(cfg['depth'])
     graph = cfg['graph']
 
-    executable = cfg('executable', DEFAULT_EXPERIMENTS[e] + '-latency')
+    executable = cfg.get('executable', DEFAULT_EXPERIMENTS[e] + '-latency')
 
     for i in range(reps):
         eprint("Running {0} with {1} producer work and {2} consumer work on {4} cores, repetition {3}".format(e, pwrk, cwrk, i, cores))
