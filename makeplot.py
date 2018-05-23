@@ -296,7 +296,7 @@ def run_config(cfg):
         eprint("Running {0} with {1} producer work and {2} consumer work on {4} cores, repetition {3}".format(e, pwrk, cwrk, i, cores))
         sp.check_call(['stack', 'exec', '--', executable, graph, depth, pwrk, cwrk, '+RTS', '-N' + cores])
 
-    files = get_latest_n_files_for(e,reps)
+    files = get_latest_n_files_of(e,reps)
 
     def load_data(f):
         with open(f, mode='r') as fp:
