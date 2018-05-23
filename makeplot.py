@@ -100,6 +100,9 @@ def get_latest_n_files(n):
 
     return dmap(lambda vs:map(fst, sorted(vs, key=snd, reverse=True))[0:n], typed_results)
 
+def get_latest_n_files_of(ty, n):
+    return glob.glob('results-' + ty + '-')
+
 def zip_latest_files(arguments):
     import zipfile
 
@@ -134,11 +137,11 @@ def run_repeatable(arguments):
 
     sp.call(['stack', 'build'])
 
-    def run_for_work(producer_work, consumer_work):
+    def run_for_work(producer_work, consumer_work, cores):
         pwrk = str(producer_work)
         cwrk = str(consumer_work)
         depth = str(arguments.depth)
-        cores = str(arguments.cores)
+        cores = str(cores)
         reps = arguments.repetitions
         for e in experiments:
             executable = DEFAULT_EXPERIMENTS[e] + '-latency'
@@ -147,7 +150,11 @@ def run_repeatable(arguments):
                 sp.check_call(['stack', 'exec', '--', executable, arguments.graph, depth, pwrk, cwrk, '+RTS', '-N' + cores])
 
         files = dselect(experiments, get_latest_n_files(reps))
-        return dmap(get_data, files)
+        data = dmap(get_data, files)
+        for fs in files.values():
+            for f in fs:
+                os.remove(f)
+        return data
 
     def extract_work(s):
         pw = None
@@ -172,6 +179,44 @@ def run_repeatable(arguments):
             results.setdefault(ty, []).append(((pw, cw), res))
 
     with open(RT_FILE, mode='w') as f:
+        json.dump(results, f)
+
+def run_config(cfg):
+    e = cfg['experiment']
+    pwrk = cfg['work']['producer']
+    cwrk = cfg['work']['consumer']
+    cores = cfg['cores']
+    reps = cfg['repetitions']
+
+    executable = DEFAULT_EXPERIMENTS[e] + '-latency'
+    for i in range(reps):
+        eprint("Running {0} with {1} producer work and {2} consumer work on {4} cores, repetition {3}".format(e, pwrk, cwrk, i, cores))
+        sp.check_call(['stack', 'exec', '--', executable, arguments.graph, depth, pwrk, cwrk, '+RTS', '-N' + cores])
+
+    files = get_latest_n_files_for(e,reps)
+
+    def load_data(f):
+        with open(f, mode='r') as fp:
+            return json.load(fp)
+
+    results = [load_data(f) for f in files]
+
+    for f in files:
+        os.remove(f)
+
+    return results
+
+def run_configs(arguments):
+    configs = None
+
+    with open(arguments.config_file, mode='r') as fp:
+        configs = json.load(fp)
+
+    results = [ {'config' : cfg, 'data' : run_config(cfg)} for cfg in configs ]
+
+    out = arguments.output if arguments.output is not None else 'results.json'
+
+    with open(out, mode='w') as f:
         json.dump(results, f)
 
 
@@ -311,7 +356,7 @@ def main():
     run_parser.add_argument('-s', '--select', nargs='*', default=DEFAULT_EXPERIMENTS)
     run_parser.add_argument('-r', '--repetitions', type=int)
     run_parser.add_argument('--depth', type=int)
-    run_parser.add_argument('-c', '--cores', type=int, default=7)
+    run_parser.add_argument('-c', '--cores', type=default=7)
     run_parser.add_argument('-g', '--graph')
     run_parser.add_argument('--no-average', default=False, action='store_true')
     run_parser.set_defaults(func=run_repeatable)
@@ -323,6 +368,10 @@ def main():
 
     rt_plot_parser.set_defaults(func=plot_rts)
 
+    dcp = sp.add_parser('run-conf')
+    dcp.add_argument('config_file')
+
+    dcp.set_defaults(func=run_configs)
 
     res = parser.parse_args()
 

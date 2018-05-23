@@ -1,7 +1,7 @@
 {-# LANGUAGE BangPatterns, OverloadedStrings #-}
 {-# LANGUAGE DoAndIfThenElse, LambdaCase #-}
 
-module LatencyRunner where 
+module LatencyRunner where
 
 -- This is used with three different benchmark implementations:
 --   PURE        -- use LVarTracePure
@@ -84,7 +84,7 @@ printGraph g = do
     let ls = V.toList g
     putStrLn (show ls)
     return ()
-    
+
 -- Iterates the sin function n times on its input and returns the sum
 -- of all iterations.
 sin_iter :: Word64 -> Float -> Float
@@ -97,11 +97,11 @@ type WorkFn = (Node -> WorkRet)
 theEnv :: [(String,String)]
 theEnv = unsafePerformIO getEnvironment
 
-checkEnv :: Read a => String -> a -> a 
+checkEnv :: Read a => String -> a -> a
 checkEnv v def =
   case lookup v theEnv of
     Just "" -> def
-    Just s  -> read s    
+    Just s  -> read s
     Nothing -> def
 
 verbose :: Bool
@@ -173,11 +173,7 @@ makeMain start_traverse ty = do
     BL.writeFile ("results-" ++ ty ++ "-" ++ tToStr t1) $
         encode $
         object
-            [ "data" .=
-              object ["start" .= ctime, "arrivals" .= res, "finish" .= ftime]
-            , "parameters" .=
-              object ["work" .= wrk, "depth" .= depthK, "system" .= ty]
-            ]
+            [ "start" .= ctime, "arrivals" .= res, "finish" .= ftime]
   where
     tToStr = formatTime defaultTimeLocale "%s"
 
@@ -190,7 +186,7 @@ wait_microsecs clocks n = do
   let loop !n = do
         now <- rdtsc
         if now - myT >= clocks
-        then return n   
+        then return n
         else loop (n+1)
   cnt <- loop 0
   return (fromIntegral cnt, n)
