@@ -6,6 +6,7 @@ import itertools
 import sys
 import math
 import subprocess as sp
+from collections import ChainMap
 from fractions import Fraction
 
 FNAME_PATTERN = re.compile("results-(\w+)-(\d+)")
@@ -187,11 +188,14 @@ def run_config(cfg):
     cwrk = cfg['work']['consumer']
     cores = cfg['cores']
     reps = cfg['repetitions']
+    depth = cfg['depth']
+    graph = cfg['graph']
 
-    executable = DEFAULT_EXPERIMENTS[e] + '-latency'
+    executable = cfg('executable', DEFAULT_EXPERIMENTS[e] + '-latency')
+
     for i in range(reps):
         eprint("Running {0} with {1} producer work and {2} consumer work on {4} cores, repetition {3}".format(e, pwrk, cwrk, i, cores))
-        sp.check_call(['stack', 'exec', '--', executable, arguments.graph, depth, pwrk, cwrk, '+RTS', '-N' + cores])
+        sp.check_call(['stack', 'exec', '--', executable, graph, depth, pwrk, cwrk, '+RTS', '-N' + cores])
 
     files = get_latest_n_files_for(e,reps)
 
@@ -206,13 +210,23 @@ def run_config(cfg):
 
     return results
 
+DEFAULT_CONFIG = {
+    'cores' : 7,
+    'repetitions': 1,
+    'depth': 20,
+    'work': {
+        'producer': 800,
+        'consumer': 800
+    }
+}
 def run_configs(arguments):
     configs = None
 
     with open(arguments.config_file, mode='r') as fp:
         configs = json.load(fp)
 
-    results = [ {'config' : cfg, 'data' : run_config(cfg)} for cfg in configs ]
+    add_graph = { 'graph': arguments.graph }
+    results = [ {'config' : cfg, 'data' : run_config(ChainMap(cfg, DEFAULT_CONFIG, add_graph))} for cfg in configs ]
 
     out = arguments.output if arguments.output is not None else 'results.json'
 
@@ -369,6 +383,7 @@ def main():
     rt_plot_parser.set_defaults(func=plot_rts)
 
     dcp = sp.add_parser('run-conf')
+    dcp.add_argument('graph')
     dcp.add_argument('config_file')
 
     dcp.set_defaults(func=run_configs)
