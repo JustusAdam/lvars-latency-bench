@@ -6,6 +6,7 @@ import itertools
 import sys
 import math
 import subprocess as sp
+import os
 from collections import MutableMapping
 from fractions import Fraction
 
