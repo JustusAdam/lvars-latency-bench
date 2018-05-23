@@ -201,7 +201,7 @@ def get_latest_n_files(n):
     return dmap(lambda vs:map(fst, sorted(vs, key=snd, reverse=True))[0:n], typed_results)
 
 def get_latest_n_files_of(ty, n):
-    return glob.glob('results-' + ty + '-')
+    return glob.glob('results-' + ty + '-*')
 
 def zip_latest_files(arguments):
     import zipfile

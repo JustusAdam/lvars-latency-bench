@@ -173,7 +173,9 @@ makeMain start_traverse ty = do
     BL.writeFile ("results-" ++ ty ++ "-" ++ tToStr t1) $
         encode $
         object
-            [ "start" .= ctime, "arrivals" .= res, "finish" .= ftime]
+            [ "start" .= ctime
+            --, "arrivals" .= res
+            , "finish" .= ftime]
   where
     tToStr = formatTime defaultTimeLocale "%s"
 
