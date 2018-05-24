@@ -325,6 +325,7 @@ def run_configs(arguments):
     with open(arguments.config_file, mode='r') as fp:
         configs = json.load(fp)
 
+    sp.check_call(['stack', 'build'])
     add_graph = { 'graph': arguments.graph }
     results = [ {'config' : cfg, 'data' : run_config(ChainMap(cfg, DEFAULT_CONFIG, add_graph))} for cfg in configs ]
 

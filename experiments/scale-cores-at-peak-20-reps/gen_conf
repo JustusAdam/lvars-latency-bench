@@ -1,0 +1,21 @@
+#!stack runhaskell
+-- -*- mode: haskell; -*-
+
+{-# LANGUAGE OverloadedStrings #-}
+
+import Data.Aeson
+import qualified Data.ByteString.Lazy as B
+import Data.Text (Text)
+
+
+experiments :: [Text]
+experiments =
+    ["fbm", "sbfm", "sbfmpar", "LVars", "par", "strategies", "sequential"]
+
+main =
+    B.writeFile "exp-config.json" $
+    encode $
+    [ object ["repetitions" .= (20 :: Int), "cores" .= c, "experiment" .= ty]
+    | c <- [1 .. 8 :: Int]
+    , ty <- experiments
+    ]
